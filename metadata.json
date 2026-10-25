@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "OpenCompact",
+  "description": "Open-source cosmetic compliance engine and interactive 3D brand twin simulator powered by Gemini 4 Argon.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
