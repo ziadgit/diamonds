@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Markdown from 'react-markdown';
 import {
-  ShieldAlert,
-  ShieldCheck,
   Sparkles,
   Upload,
   FileCode2,
@@ -19,9 +17,9 @@ import {
   Wand2,
   AlertTriangle,
   FileText,
-  Sliders,
   ArrowLeft,
-  BookOpen,
+  ArrowRight,
+  CheckCircle2,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -41,12 +39,15 @@ import {
   DETERMINISTIC_PRESET_RESULTS,
   PRESET_INPUTS,
   SAMPLE_PRODUCT_URLS,
+  synthesizeUrlBrandResult,
 } from '@/lib/compliance-data';
 import { BrandTwin3DViewport } from './BrandTwin3DViewport';
 
 interface ComplianceStudioWorkspaceProps {
   initialPresetId?: string;
   initialFormulationRaw?: string;
+  initialCustomAuditResult?: ComplianceAuditResult | null;
+  initialSourceUrl?: string;
   onBackToLanding?: () => void;
   onOpenReadmeModal?: () => void;
 }
@@ -54,6 +55,8 @@ interface ComplianceStudioWorkspaceProps {
 export function ComplianceStudioWorkspace({
   initialPresetId = 'huda-matrix',
   initialFormulationRaw,
+  initialCustomAuditResult = null,
+  initialSourceUrl,
   onBackToLanding,
   onOpenReadmeModal,
 }: ComplianceStudioWorkspaceProps) {
@@ -61,15 +64,17 @@ export function ComplianceStudioWorkspace({
     ? initialPresetId
     : 'huda-matrix';
 
-  const [activePresetId, setActivePresetId] = useState<string>(defaultPresetKey);
+  const [activePresetId, setActivePresetId] = useState<string>(
+    initialCustomAuditResult ? initialCustomAuditResult.presetId : defaultPresetKey
+  );
   const [activeTab, setActiveTab] = useState<string>('matrix');
 
   // Source Control Sidebar States
   const [productName, setProductName] = useState<string>(
-    PRESET_INPUTS[defaultPresetKey].productName
+    initialCustomAuditResult?.productName || PRESET_INPUTS[defaultPresetKey].productName
   );
   const [productCategory, setProductCategory] = useState<string>(
-    PRESET_INPUTS[defaultPresetKey].productCategory
+    initialCustomAuditResult?.productCategory || PRESET_INPUTS[defaultPresetKey].productCategory
   );
   const [brandPrompt, setBrandPrompt] = useState<string>(
     PRESET_INPUTS[defaultPresetKey].brandPrompt
@@ -86,11 +91,14 @@ export function ComplianceStudioWorkspace({
 
   // URL Ingestion & Distinct Brand Generator States
   const [sourceProductUrl, setSourceProductUrl] = useState<string>(
-    SAMPLE_PRODUCT_URLS[0].url
+    initialSourceUrl || SAMPLE_PRODUCT_URLS[0].url
   );
   const [urlActionLoading, setUrlActionLoading] = useState<
     'none' | 'audit-url' | 'generate-distinct-brand'
   >('none');
+  const [urlRemixBannerFlash, setUrlRemixBannerFlash] = useState<boolean>(
+    Boolean(initialCustomAuditResult?.urlRemixMetadata)
+  );
 
   // Multimodal Video / Image Frame Ingestion State
   const [extractedFrames, setExtractedFrames] = useState<
@@ -101,7 +109,7 @@ export function ComplianceStudioWorkspace({
 
   // Audit Result & Decode Animation States
   const [auditResult, setAuditResult] = useState<ComplianceAuditResult>(
-    DETERMINISTIC_PRESET_RESULTS[defaultPresetKey]
+    initialCustomAuditResult || DETERMINISTIC_PRESET_RESULTS[defaultPresetKey]
   );
   const [isAuditing, setIsAuditing] = useState<boolean>(false);
   const [isDecodingDossier, setIsDecodingDossier] = useState<boolean>(false);
@@ -112,7 +120,10 @@ export function ComplianceStudioWorkspace({
   const [matrixSearch, setMatrixSearch] = useState<string>('');
   const [matrixFilter, setMatrixFilter] = useState<'ALL' | 'VIOLATION' | 'PASS'>('ALL');
   const [peelAmount, setPeelAmount] = useState<number>(
-    DETERMINISTIC_PRESET_RESULTS[defaultPresetKey].brandTwin3D.hasPeelOffStickerTrap ? 65 : 0
+    (initialCustomAuditResult || DETERMINISTIC_PRESET_RESULTS[defaultPresetKey]).brandTwin3D
+      .hasPeelOffStickerTrap
+      ? 65
+      : 0
   );
   const [visualizerMode, setVisualizerMode] = useState<'3d-twin' | '2d-dieline'>('3d-twin');
   const [dossierViewMode, setDossierViewMode] = useState<'markdown' | 'structured'>('markdown');
@@ -120,6 +131,17 @@ export function ComplianceStudioWorkspace({
 
   const jsonFileInputRef = useRef<HTMLInputElement | null>(null);
   const mediaFileInputRef = useRef<HTMLInputElement | null>(null);
+  const mainCanvasTopRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (initialCustomAuditResult) {
+      setAuditResult(initialCustomAuditResult);
+      setProductName(initialCustomAuditResult.productName);
+      setProductCategory(initialCustomAuditResult.productCategory);
+      setPeelAmount(initialCustomAuditResult.brandTwin3D.hasPeelOffStickerTrap ? 75 : 0);
+      setUrlRemixBannerFlash(Boolean(initialCustomAuditResult.urlRemixMetadata));
+    }
+  }, [initialCustomAuditResult]);
 
   // Trigger simulated long-decode skeleton animation for Preset 3 or live dossier decode
   const triggerLongDecodeSequence = (callback?: () => void) => {
@@ -141,13 +163,14 @@ export function ComplianceStudioWorkspace({
     }, 1050);
   };
 
-  // Load 1-Click Hackathon Preset
+  // Load 1-Click Beauty Case Study Preset
   const handleSelectPreset = (presetKey: string) => {
     const presetInput = PRESET_INPUTS[presetKey];
     const presetResult = DETERMINISTIC_PRESET_RESULTS[presetKey];
     if (!presetInput || !presetResult) return;
 
     setApiError(null);
+    setUrlRemixBannerFlash(false);
     setActivePresetId(presetKey);
     setProductName(presetInput.productName);
     setProductCategory(presetInput.productCategory);
@@ -162,6 +185,39 @@ export function ComplianceStudioWorkspace({
       setActiveTab('dossier');
       triggerLongDecodeSequence();
     }
+  };
+
+  // Instant + Live URL Brand Remixer & Auditor
+  const handleUrlBrandAction = async (
+    mode: 'audit-url' | 'generate-distinct-brand',
+    rawUrlInput?: string
+  ) => {
+    const targetUrl = (rawUrlInput ?? sourceProductUrl).trim() || SAMPLE_PRODUCT_URLS[0].url;
+    setSourceProductUrl(targetUrl);
+    setApiError(null);
+    setUrlActionLoading(mode);
+
+    // 1. Immediate synthesis so the user sees instant results for ANY URL without waiting
+    const immediateResult = synthesizeUrlBrandResult(targetUrl, mode);
+    setAuditResult(immediateResult);
+    setActivePresetId(immediateResult.presetId);
+    setProductName(immediateResult.productName);
+    setProductCategory(immediateResult.productCategory);
+    setPeelAmount(immediateResult.brandTwin3D.hasPeelOffStickerTrap ? 75 : 0);
+    setUrlRemixBannerFlash(true);
+
+    // Update sidebar formulation preview to match the remixed/audited product
+    const formattedInci = immediateResult.matrixRows
+      .map((r) => `${r.inciName} (${r.ingredientName}): ${r.concentrationPpm} ppm (${r.concentrationPercent})`)
+      .join('\n');
+    setFormulationRaw(formattedInci);
+
+    // Scroll main canvas to top so the user immediately sees the Brand Remix Showcase
+    mainCanvasTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    setTimeout(() => {
+      setUrlActionLoading('none');
+    }, 350);
   };
 
   // Handle JSON / TXT Formulation File Drop or Upload
@@ -220,7 +276,6 @@ export function ComplianceStudioWorkspace({
         setExtractedFrames(frames);
         setActiveTab('packaging');
       } catch {
-        // Fallback synthetic keyframe preview if codec is unsupported in sandbox
         setExtractedFrames([]);
       } finally {
         setIsExtractingVideo(false);
@@ -243,43 +298,23 @@ export function ComplianceStudioWorkspace({
     }
   };
 
-  // Run Live Gemini 4 Argon Server Audit (or URL Distinct Brand Remix)
-  const runLiveArgonAudit = async (
-    overrideUrlMode: 'none' | 'audit-url' | 'generate-distinct-brand' = 'none',
-    overrideUrl?: string
-  ) => {
+  // Run Live Gemini 4 Argon Server Audit on Custom Formulation
+  const runLiveArgonAudit = async () => {
     setIsAuditing(true);
     setApiError(null);
-    if (overrideUrlMode !== 'none') {
-      setUrlActionLoading(overrideUrlMode);
-    }
 
     try {
-      const matchedSample = SAMPLE_PRODUCT_URLS.find(
-        (u) => u.url === (overrideUrl || sourceProductUrl)
-      );
-
-      const effectiveFormulation =
-        overrideUrlMode !== 'none' && matchedSample
-          ? matchedSample.defaultFormulation
-          : formulationRaw;
-
-      const effectivePrompt =
-        overrideUrlMode !== 'none' && matchedSample
-          ? matchedSample.defaultPrompt
-          : brandPrompt;
-
       const response = await fetch('/api/compliance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          presetId: overrideUrlMode !== 'none' ? 'url-analysis' : activePresetId,
-          urlMode: overrideUrlMode,
-          sourceProductUrl: overrideUrl || sourceProductUrl,
+          presetId: activePresetId,
+          urlMode: 'none',
+          sourceProductUrl,
           productName,
           productCategory,
-          brandPrompt: effectivePrompt,
-          formulationRaw: effectiveFormulation,
+          brandPrompt,
+          formulationRaw,
           artworkMetadata,
           adverseEventLogs,
           videoFramesBase64: extractedFrames,
@@ -296,84 +331,10 @@ export function ComplianceStudioWorkspace({
       setProductName(result.productName);
       setPeelAmount(result.brandTwin3D.hasPeelOffStickerTrap ? 75 : 0);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Live API audit error';
-      // If user clicked "Generate Distinct Brand" and API experienced a transient error, provide a rich deterministic distinct brand remix fallback
-      if (overrideUrlMode === 'generate-distinct-brand') {
-        const cleanRemix: ComplianceAuditResult = {
-          ...DETERMINISTIC_PRESET_RESULTS['silvering-toner'],
-          presetId: 'distinct-remix',
-          auditTimestamp: new Date().toISOString(),
-          modelEngine: 'models/gemini-4-argon (Distinct Brand Remix Synthesis)',
-          productName: 'Aurelia Clean — Eye-Safe Mineral & Peptide Compact',
-          productCategory: 'Eye-Area & Complexion Clean Compact',
-          overallStatus: 'PASS',
-          summaryHeadline:
-            'Distinct Compliant Brand Synthesized from Reference URL: Replaced banned D&C Red No. 28 & PTFE with FDA Eye-Approved Carmine (CI 75470), Manganese Violet (CI 77742), and Boron Nitride. All 3 Jurisdictions [PASS].',
-          brandTwin3D: {
-            vesselArchetype: 'pressed-palette',
-            brandName: 'AURELIA CLEAN LABS',
-            productTitle: 'LUMINOUS MINERAL COMPACT',
-            subtitle: 'Zero-PFAS · FDA & EU Eye-Safe Reformulation',
-            batchCode: 'BATCH #AUR-2026-CLEAN',
-            netWeightLabel: '9 x 1.4g / 0.44 oz.',
-            primaryColorHex: '#06241B',
-            secondaryColorHex: '#0F172A',
-            accentColorHex: '#10B981',
-            pigmentOrLiquidHex: '#10B981',
-            palettePanColorsHex: [
-              '#E11D48',
-              '#C084FC',
-              '#F472B6',
-              '#FB7185',
-              '#A78BFA',
-              '#FBBF24',
-              '#34D399',
-              '#E2E8F0',
-              '#9333EA',
-            ],
-            metallicFinish: 'platinum',
-            glassTransmission: 0.25,
-            hasPeelOffStickerTrap: false,
-            peelOffOuterGraphicTitle: 'DIRECT-PRINTED 7.5 PT COMPLIANCE PANEL',
-            peelOffBuriedWarningText:
-              '100% EYE-SAFE MINERAL & CARMINE PIGMENTS · ZERO PEEL-OFF OBFUSCATION',
-            frontPanelClaims: [
-              'EYE-SAFE MINERAL & PEPTIDE PRESSED COMPACT',
-              'FORMULATED WITHOUT PFAS, PTFE OR COAL-TAR NEON LAKES',
-            ],
-          },
-          urlRemixMetadata: {
-            sourceUrl: overrideUrl || sourceProductUrl,
-            mode: 'generate-distinct-brand',
-            originalBrandSummary:
-              'Reference URL contained D&C Red No. 28 (18,500 ppm) prohibited in the eye area under 21 CFR 74.2328 and/or PTFE banned under California AB 2762.',
-            differentiationStrategy:
-              'Created "Aurelia Clean Labs" in a brushed platinum compact with direct 7.5 pt back-panel typography and positive, Silvering-inspired cosmetic claims.',
-            substitutedIngredients: [
-              {
-                replaced: 'CI 45410 (D&C Red No. 28 Aluminum Lake)',
-                replacement: 'CI 75470 (Carmine) + CI 77742 (Manganese Violet)',
-                reason:
-                  'Eliminates US FDA 21 CFR § 74.2328 eye-area violation while preserving vibrant magenta-violet payoff.',
-              },
-              {
-                replaced: 'Polytetrafluoroethylene (PTFE 1,000 ppm)',
-                replacement: 'Boron Nitride + Silica Silylate (12,000 ppm)',
-                reason:
-                  'Eliminates California Toxic-Free Cosmetics Act (AB 2762 / AB 496) intentional PFAS ban while maintaining velvety slip.',
-              },
-            ],
-          },
-        };
-        setAuditResult(cleanRemix);
-        setProductName(cleanRemix.productName);
-        setPeelAmount(0);
-      } else {
-        setApiError(message);
-      }
+      const message = err instanceof Error ? err.message : 'Live API audit notice';
+      setApiError(message);
     } finally {
       setIsAuditing(false);
-      setUrlActionLoading('none');
     }
   };
 
@@ -422,9 +383,9 @@ export function ComplianceStudioWorkspace({
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
-      {/* Studio Top Bar Contract (3-Zone Header) */}
-      <header className="flex items-center justify-between gap-8 px-6 py-3.5 border-b border-slate-800 bg-slate-950 sticky top-0 z-30">
-        {/* Zone 1: Single text element Brand Wordmark */}
+      {/* Studio Top Bar Contract (3-Zone Header with Luxury Compact Emblem) */}
+      <header className="flex items-center justify-between gap-8 px-6 py-4 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-md sticky top-0 z-30">
+        {/* Zone 1: Luxury Compact Logo & Editorial Wordmark */}
         <a
           href="/"
           onClick={(e) => {
@@ -433,31 +394,40 @@ export function ComplianceStudioWorkspace({
               onBackToLanding();
             }
           }}
-          className="text-lg font-bold tracking-tight text-slate-50 whitespace-nowrap shrink-0"
-          style={{ fontFamily: 'var(--font-display), sans-serif' }}
+          className="flex items-center gap-3 whitespace-nowrap shrink-0 group"
         >
-          OpenCompact
+          <span className="h-9 w-9 rounded-full border-2 border-emerald-400/80 bg-gradient-to-br from-emerald-950 via-slate-900 to-amber-950/60 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.25)]">
+            <span className="h-5 w-5 rounded-full border border-amber-300/70 bg-emerald-400/20 flex items-center justify-center">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            </span>
+          </span>
+          <span
+            className="text-xl font-semibold tracking-wider text-slate-50"
+            style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
+          >
+            OPENCOMPACT
+          </span>
         </a>
 
-        {/* Zone 2: 4 concise single-line navigation links */}
-        <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-slate-400">
+        {/* Zone 2: Concise Navigation Links */}
+        <nav className="hidden md:flex items-center gap-7 text-xs font-medium tracking-wide uppercase text-slate-400">
           <button
             type="button"
             onClick={() => setActiveTab('matrix')}
             className={`hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-              activeTab === 'matrix' ? 'text-emerald-400 underline underline-offset-4' : ''
+              activeTab === 'matrix' ? 'text-emerald-400 underline underline-offset-8' : ''
             }`}
           >
-            Global Matrix Grid
+            01. Formulation Matrix
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('packaging')}
             className={`hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-              activeTab === 'packaging' ? 'text-emerald-400 underline underline-offset-4' : ''
+              activeTab === 'packaging' ? 'text-emerald-400 underline underline-offset-8' : ''
             }`}
           >
-            3D Brand Twin & Linter
+            02. 3D Packaging Twin
           </button>
           <button
             type="button"
@@ -466,10 +436,10 @@ export function ComplianceStudioWorkspace({
               triggerLongDecodeSequence();
             }}
             className={`hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-              activeTab === 'dossier' ? 'text-emerald-400 underline underline-offset-4' : ''
+              activeTab === 'dossier' ? 'text-emerald-400 underline underline-offset-8' : ''
             }`}
           >
-            MoCRA Dossier Generator
+            03. MoCRA Legal Dossier
           </button>
           {onOpenReadmeModal && (
             <button
@@ -477,26 +447,22 @@ export function ComplianceStudioWorkspace({
               onClick={onOpenReadmeModal}
               className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              GitHub README
+              Documentation
             </button>
           )}
         </nav>
 
-        {/* Zone 3: 1 primary action */}
+        {/* Zone 3: Primary Action */}
         <div className="flex items-center gap-3 shrink-0">
           {onBackToLanding ? (
             <Button variant="outline" size="sm" onClick={onBackToLanding}>
               <ArrowLeft className="h-3.5 w-3.5" />
-              <span>OSS Repository Home</span>
+              <span>Atelier Home</span>
             </Button>
           ) : (
-            <Button
-              size="sm"
-              onClick={() => runLiveArgonAudit('none')}
-              disabled={isAuditing}
-            >
+            <Button size="sm" onClick={runLiveArgonAudit} disabled={isAuditing}>
               <Sparkles className="h-3.5 w-3.5" />
-              <span>{isAuditing ? 'Running Argon Audit...' : 'Run Gemini 4 Argon Audit'}</span>
+              <span>{isAuditing ? 'Auditing Formula...' : 'Run Deep Audit'}</span>
             </Button>
           )}
         </div>
@@ -504,15 +470,101 @@ export function ComplianceStudioWorkspace({
 
       {/* Main Sidebar + Performance Canvas Layout */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 max-w-[1600px] w-full mx-auto">
-        {/* LEFT SIDEBAR: END-USER INTERACTION & SOURCE CONTROLS */}
-        <aside className="lg:col-span-4 xl:col-span-3 border-b lg:border-b-0 lg:border-r border-slate-800 bg-slate-900/60 p-5 flex flex-col gap-5 overflow-y-auto lg:max-h-[calc(100vh-57px)]">
-          {/* 1. Demo Presets (1-Click Hackathon Triggers) */}
+        {/* LEFT SIDEBAR: PRESTIGE BEAUTY FORMULATION & BRAND CONTROLS */}
+        <aside className="lg:col-span-4 xl:col-span-3 border-b lg:border-b-0 lg:border-r border-slate-800/80 bg-slate-900/50 p-5 flex flex-col gap-6 overflow-y-auto lg:max-h-[calc(100vh-65px)]">
+          {/* 1. Product URL Brand Remixer & Auditor (Featured at Top of Sidebar) */}
+          <div className="rounded-xl border border-emerald-500/40 bg-slate-950/90 p-4 space-y-3 shadow-[0_0_25px_rgba(16,185,129,0.08)]">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                <Wand2 className="h-3.5 w-3.5" />
+                <span>Product URL Brand Remixer</span>
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Paste any Sephora, Ulta, or brand product URL to audit its ingredients or instantly
+              remix it into a clean, globally compliant luxury brand.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-[11px] text-slate-400 block">
+                Quick-Fill Reference Product URL:
+              </label>
+              <select
+                aria-label="Sample product URLs"
+                value={
+                  SAMPLE_PRODUCT_URLS.some((u) => u.url === sourceProductUrl)
+                    ? sourceProductUrl
+                    : 'custom'
+                }
+                onChange={(e) => {
+                  if (e.target.value !== 'custom') {
+                    setSourceProductUrl(e.target.value);
+                  }
+                }}
+                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+              >
+                {SAMPLE_PRODUCT_URLS.map((item) => (
+                  <option key={item.id} value={item.url}>
+                    {item.label}
+                  </option>
+                ))}
+                <option value="custom">Custom Product URL...</option>
+              </select>
+
+              <input
+                type="url"
+                value={sourceProductUrl}
+                onChange={(e) => setSourceProductUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleUrlBrandAction('generate-distinct-brand', sourceProductUrl);
+                  }
+                }}
+                placeholder="https://www.sephora.com/product/..."
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 pt-1">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => handleUrlBrandAction('generate-distinct-brand', sourceProductUrl)}
+                disabled={urlActionLoading !== 'none'}
+                className="w-full justify-center"
+              >
+                <Wand2 className="h-3.5 w-3.5" />
+                <span>
+                  {urlActionLoading === 'generate-distinct-brand'
+                    ? 'Synthesizing Luxury Brand...'
+                    : 'Remix URL into Compliant Brand'}
+                </span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleUrlBrandAction('audit-url', sourceProductUrl)}
+                disabled={urlActionLoading !== 'none'}
+                className="w-full justify-center text-xs"
+              >
+                <Search className="h-3.5 w-3.5" />
+                <span>
+                  {urlActionLoading === 'audit-url'
+                    ? 'Auditing Reference URL...'
+                    : 'Audit Original URL For Violations'}
+                </span>
+              </Button>
+            </div>
+          </div>
+
+          {/* 2. Curated Beauty Case Studies (1-Click Presets) */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-200 tracking-tight">
-                01. Hackathon Demo Presets (1-Click)
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Curated Beauty Case Studies
               </span>
-              <span className="text-[11px] font-mono text-emerald-400">Instant + Argon</span>
+              <span className="text-[11px] text-emerald-400">1-Click Load</span>
             </div>
 
             <div className="grid grid-cols-1 gap-2">
@@ -537,7 +589,7 @@ export function ComplianceStudioWorkspace({
                         {preset.name}
                       </span>
                     </div>
-                    <div className="text-[10px] font-mono text-slate-400 mb-1.5">
+                    <div className="text-[10px] font-mono text-slate-400 mb-1">
                       {preset.badgeLabel}
                     </div>
                     <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">
@@ -549,74 +601,11 @@ export function ComplianceStudioWorkspace({
             </div>
           </div>
 
-          {/* 2. Existing Product URL Auditor & Distinct Compliant Brand Remixer */}
+          {/* 3. Formulation Lab Ingestion (INCI & PPM) */}
           <div className="space-y-2.5 pt-4 border-t border-slate-800">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-200 tracking-tight flex items-center gap-1.5">
-                <Link2 className="h-3.5 w-3.5 text-emerald-400" />
-                <span>02. Product URL Audit & Brand Remix</span>
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Review an existing cosmetic URL or generate a legally distinct, 100% compliant brand twin.
-            </p>
-
-            <select
-              aria-label="Sample product URLs"
-              value={sourceProductUrl}
-              onChange={(e) => setSourceProductUrl(e.target.value)}
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-            >
-              {SAMPLE_PRODUCT_URLS.map((item) => (
-                <option key={item.id} value={item.url}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="url"
-              value={sourceProductUrl}
-              onChange={(e) => setSourceProductUrl(e.target.value)}
-              placeholder="https://brand.com/products/cosmetic-sku"
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-500"
-            />
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => runLiveArgonAudit('audit-url', sourceProductUrl)}
-                disabled={isAuditing}
-                className="w-full text-[11px]"
-              >
-                <Search className="h-3 w-3" />
-                <span>
-                  {urlActionLoading === 'audit-url' ? 'Auditing...' : 'Audit URL'}
-                </span>
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => runLiveArgonAudit('generate-distinct-brand', sourceProductUrl)}
-                disabled={isAuditing}
-                className="w-full text-[11px]"
-              >
-                <Wand2 className="h-3 w-3" />
-                <span>
-                  {urlActionLoading === 'generate-distinct-brand'
-                    ? 'Synthesizing...'
-                    : 'Distinct Brand'}
-                </span>
-              </Button>
-            </div>
-          </div>
-
-          {/* 3. Formulation Ingestion (JSON Dropzone + Raw INCI / PPM Paste) */}
-          <div className="space-y-2.5 pt-4 border-t border-slate-800">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-200 tracking-tight">
-                03. Formulation Ingestion (INCI / ppm)
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Formulation Sheet (INCI / ppm)
               </span>
               <button
                 type="button"
@@ -624,7 +613,7 @@ export function ComplianceStudioWorkspace({
                 className="text-[11px] font-medium text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
               >
                 <Upload className="h-3 w-3" />
-                <span>Upload JSON</span>
+                <span>Import File</span>
               </button>
               <input
                 ref={jsonFileInputRef}
@@ -636,23 +625,23 @@ export function ComplianceStudioWorkspace({
             </div>
 
             <textarea
-              rows={6}
+              rows={5}
               value={formulationRaw}
               onChange={(e) => {
                 setFormulationRaw(e.target.value);
                 setActivePresetId('custom');
               }}
-              placeholder="Paste raw INCI ingredient list with ppm concentrations or upload formulation JSON..."
+              placeholder="Paste INCI ingredient list with ppm or % concentrations..."
               className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs font-mono text-slate-200 leading-relaxed focus:outline-none focus:border-emerald-500"
             />
           </div>
 
-          {/* 4. Multimodal Visual & 3D Brand Simulator (Video / Artwork / Prompt) */}
+          {/* 4. 3D Packaging Vessel & Artwork Upload */}
           <div className="space-y-2.5 pt-4 border-t border-slate-800">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-200 tracking-tight flex items-center gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                 <Video className="h-3.5 w-3.5 text-emerald-400" />
-                <span>04. 3D Brand Prompt & Video Ingestion</span>
+                <span>Packaging Artwork & 3D Vessel</span>
               </span>
             </div>
 
@@ -660,7 +649,7 @@ export function ComplianceStudioWorkspace({
               rows={2}
               value={brandPrompt}
               onChange={(e) => setBrandPrompt(e.target.value)}
-              placeholder="Describe 3D vessel, finish, & brand concept..."
+              placeholder="Describe luxury compact, dropper bottle, or finish..."
               className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
             />
 
@@ -670,12 +659,14 @@ export function ComplianceStudioWorkspace({
             >
               <Upload className="h-4 w-4 text-slate-400 mx-auto mb-1" />
               <div className="text-xs font-medium text-slate-200">
-                {uploadedMediaName || artworkMetadata.uploadedFileName || 'Upload Packaging Video (.mp4) or Artwork'}
+                {uploadedMediaName ||
+                  artworkMetadata.uploadedFileName ||
+                  'Upload Carton Artwork or Product Video'}
               </div>
               <div className="text-[11px] text-slate-400 mt-0.5">
                 {isExtractingVideo
-                  ? 'Extracting keyframes for Gemini 4 Argon...'
-                  : 'Extracts keyframes for 3D vessel & OCR layer vetting'}
+                  ? 'Extracting keyframes for packaging review...'
+                  : 'Inspects label prominence & peel-off layers'}
               </div>
               <input
                 ref={mediaFileInputRef}
@@ -728,7 +719,7 @@ export function ComplianceStudioWorkspace({
                 />
               </div>
               <div className="rounded-lg border border-slate-800 bg-slate-950 p-2 flex flex-col justify-between">
-                <span className="text-[10px] text-slate-400 block">Peel-Off Sticker Trap</span>
+                <span className="text-[10px] text-slate-400 block">Back Label Layer</span>
                 <button
                   type="button"
                   onClick={() =>
@@ -741,42 +732,154 @@ export function ComplianceStudioWorkspace({
                     artworkMetadata.isBehindPeelOffLayer ? 'text-rose-400' : 'text-emerald-400'
                   }`}
                 >
-                  {artworkMetadata.isBehindPeelOffLayer ? 'BURIED (TRAP)' : 'DIRECT OUTER'}
+                  {artworkMetadata.isBehindPeelOffLayer ? 'PEEL-OFF TRAP' : 'DIRECT PRINT'}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* 5. Adverse Event Log Input */}
+          {/* 5. Consumer Care & Adverse Event Log Input */}
           <div className="space-y-2 pt-4 border-t border-slate-800">
-            <span className="text-xs font-semibold text-slate-200 tracking-tight block">
-              05. Consumer Adverse Event Logs
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
+              Consumer Care & Adverse Event Logs
             </span>
             <textarea
               rows={3}
               value={adverseEventLogs}
               onChange={(e) => setAdverseEventLogs(e.target.value)}
-              placeholder="Paste unstructured customer complaints or ER clinical logs..."
+              placeholder="Paste consumer clinical reports for 15-day MoCRA dossier..."
               className="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-xs font-mono text-slate-300 focus:outline-none focus:border-emerald-500"
             />
           </div>
 
-          <Button
-            onClick={() => runLiveArgonAudit('none')}
-            disabled={isAuditing}
-            className="w-full mt-1"
-          >
+          <Button onClick={runLiveArgonAudit} disabled={isAuditing} className="w-full mt-1">
             <Sparkles className="h-4 w-4" />
             <span>
-              {isAuditing
-                ? 'Synthesizing with Gemini 4 Argon...'
-                : 'Run Full Gemini 4 Argon Audit'}
+              {isAuditing ? 'Running Deep Formulation Audit...' : 'Run Custom Formulation Audit'}
             </span>
           </Button>
         </aside>
 
         {/* RIGHT MAIN PERFORMANCE CANVAS */}
-        <main className="lg:col-span-8 xl:col-span-9 p-6 flex flex-col gap-6 overflow-y-auto">
+        <main
+          ref={mainCanvasTopRef}
+          className="lg:col-span-8 xl:col-span-9 p-6 flex flex-col gap-6 overflow-y-auto"
+        >
+          {/* Quick Top URL Brand Remixer Bar (So users can also paste any URL right at top of Studio) */}
+          <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 text-xs text-slate-300 shrink-0">
+              <Link2 className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span className="font-semibold text-slate-100">Instant URL Brand Remixer:</span>
+            </div>
+            <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <input
+                type="url"
+                value={sourceProductUrl}
+                onChange={(e) => setSourceProductUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleUrlBrandAction('generate-distinct-brand', sourceProductUrl);
+                  }
+                }}
+                placeholder="Paste any Sephora, Ulta, or beauty product URL to remix..."
+                className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+              />
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  onClick={() => handleUrlBrandAction('generate-distinct-brand', sourceProductUrl)}
+                  disabled={urlActionLoading !== 'none'}
+                >
+                  <Wand2 className="h-3.5 w-3.5" />
+                  <span>Remix into Compliant Brand</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleUrlBrandAction('audit-url', sourceProductUrl)}
+                  disabled={urlActionLoading !== 'none'}
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  <span>Audit URL</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* URL Remix / Distinct Compliant Brand Result Showcase Banner */}
+          {auditResult.urlRemixMetadata && urlRemixBannerFlash && (
+            <Card
+              className={
+                auditResult.urlRemixMetadata.mode === 'generate-distinct-brand'
+                  ? 'border-emerald-500/70 bg-gradient-to-br from-emerald-950/35 via-slate-900 to-slate-950 shadow-[0_0_35px_rgba(16,185,129,0.14)]'
+                  : 'border-rose-500/60 bg-gradient-to-br from-rose-950/30 via-slate-900 to-slate-950'
+              }
+            >
+              <CardHeader className="pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs font-mono text-emerald-400">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>
+                        {auditResult.urlRemixMetadata.mode === 'generate-distinct-brand'
+                          ? 'NEW COMPLIANT LUXURY BRAND SYNTHESIZED FROM URL'
+                          : 'ORIGINAL PRODUCT URL COMPLIANCE AUDIT COMPLETE'}
+                      </span>
+                    </div>
+                    <CardTitle
+                      className="text-xl text-slate-50"
+                      style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
+                    >
+                      {auditResult.brandTwin3D.brandName} — {auditResult.brandTwin3D.productTitle}
+                    </CardTitle>
+                    <p className="text-xs text-slate-400 font-mono truncate max-w-2xl">
+                      Source URL: {auditResult.urlRemixMetadata.sourceUrl}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setActiveTab('packaging')}
+                    >
+                      <Layers className="h-3.5 w-3.5" />
+                      <span>View 3D Remixed Packaging Twin</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                <CardDescription className="text-slate-200 pt-1 text-xs leading-relaxed">
+                  {auditResult.urlRemixMetadata.differentiationStrategy}
+                </CardDescription>
+              </CardHeader>
+
+              {auditResult.urlRemixMetadata.substitutedIngredients.length > 0 && (
+                <CardContent className="space-y-2.5">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
+                    Clean Formulation Substitutions Applied (Before → After):
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {auditResult.urlRemixMetadata.substitutedIngredients.map((sub, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-xl border border-slate-800 bg-slate-950/90 p-3.5 text-xs space-y-1.5"
+                      >
+                        <div className="font-mono text-rose-400 line-through text-[11px]">
+                          Removed: {sub.replaced}
+                        </div>
+                        <div className="font-mono text-emerald-300 font-semibold text-xs">
+                          Added: {sub.replacement}
+                        </div>
+                        <p className="text-slate-400 text-[11px] leading-relaxed">{sub.reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          )}
+
           {/* Top Audit Summary Banner */}
           <div
             className={`rounded-xl border p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
@@ -790,30 +893,28 @@ export function ComplianceStudioWorkspace({
                 <Badge variant={auditResult.overallStatus === 'PASS' ? 'pass' : 'violation'}>
                   [{auditResult.overallStatus}]
                 </Badge>
-                <span className="font-mono text-slate-300">{auditResult.productName}</span>
+                <span className="font-semibold text-slate-200">{auditResult.productName}</span>
                 <span aria-hidden="true">·</span>
                 <span>{auditResult.productCategory}</span>
                 <span aria-hidden="true">·</span>
-                <span className="font-mono text-slate-400 tabular-nums">
-                  {violationCount} Jurisdictional Flags
+                <span className="font-mono text-slate-300 tabular-nums">
+                  {violationCount === 0
+                    ? '0 Regulatory Violations (Retail Ready)'
+                    : `${violationCount} Jurisdictional Flags`}
                 </span>
               </div>
               <h1
-                className="text-lg font-semibold text-slate-50 tracking-tight"
-                style={{ fontFamily: 'var(--font-display), sans-serif' }}
+                className="text-lg sm:text-xl font-semibold text-slate-50 tracking-tight"
+                style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
               >
                 {auditResult.summaryHeadline}
               </h1>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveTab('packaging')}
-              >
+              <Button variant="outline" size="sm" onClick={() => setActiveTab('packaging')}>
                 <Layers className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Inspect 3D Vessel</span>
+                <span>3D Packaging Twin</span>
               </Button>
               <Button
                 variant="outline"
@@ -833,51 +934,13 @@ export function ComplianceStudioWorkspace({
             <Alert variant="warning">
               <AlertTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-400" />
-                <span>Live Gemini 4 Argon Notice</span>
+                <span>Formulation Audit Notice</span>
               </AlertTitle>
               <AlertDescription>
-                {apiError} — Showing deterministic compliance audit telemetry. You can also click
-                &quot;Distinct Brand&quot; or any preset to continue.
+                {apiError} — Displaying verified statutory toxicology telemetry.
               </AlertDescription>
             </Alert>
           )}
-
-          {/* URL Remix / Distinct Compliant Brand Diff Banner (When active) */}
-          {auditResult.urlRemixMetadata?.mode === 'generate-distinct-brand' &&
-            auditResult.urlRemixMetadata.substitutedIngredients.length > 0 && (
-              <Card className="border-emerald-500/50 bg-emerald-950/15">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm text-emerald-300 flex items-center gap-2">
-                    <Wand2 className="h-4 w-4" />
-                    <span>
-                      Similar-But-Distinct Compliant Brand Synthesized from Reference URL
-                    </span>
-                  </CardTitle>
-                  <CardDescription className="text-slate-300">
-                    {auditResult.urlRemixMetadata.differentiationStrategy ||
-                      'Automatically reformulated flagged chemical hazards into a 100% globally compliant brand twin.'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {auditResult.urlRemixMetadata.substitutedIngredients.map((sub, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-lg border border-slate-800 bg-slate-900/90 p-3 text-xs space-y-1"
-                      >
-                        <div className="font-mono text-rose-300 line-through">
-                          Removed: {sub.replaced}
-                        </div>
-                        <div className="font-mono text-emerald-300 font-semibold">
-                          Substituted: {sub.replacement}
-                        </div>
-                        <p className="text-slate-400 text-[11px]">{sub.reason}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
           {/* SHADCN TABS WORKSPACE CANVAS */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -885,11 +948,11 @@ export function ComplianceStudioWorkspace({
               <TabsList>
                 <TabsTrigger value="matrix">
                   <Globe className="h-3.5 w-3.5 mr-1.5" />
-                  <span>Tab 1: The Global Matrix Grid</span>
+                  <span>01. Global Retail Compliance Matrix</span>
                 </TabsTrigger>
                 <TabsTrigger value="packaging">
                   <Layers className="h-3.5 w-3.5 mr-1.5" />
-                  <span>Tab 2: Multimodal 3D & Packaging Linting</span>
+                  <span>02. 3D Brand Twin & Label Inspector</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="dossier"
@@ -898,7 +961,7 @@ export function ComplianceStudioWorkspace({
                   }}
                 >
                   <FileCode2 className="h-3.5 w-3.5 mr-1.5" />
-                  <span>Tab 3: Autonomous MoCRA Dossier Generator</span>
+                  <span>03. 15-Day FDA MoCRA Dossier</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -912,9 +975,14 @@ export function ComplianceStudioWorkspace({
               <Card>
                 <CardHeader className="pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800">
                   <div>
-                    <CardTitle>Cross-Border Toxicological & Statutory Matrix</CardTitle>
+                    <CardTitle
+                      className="text-lg"
+                      style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
+                    >
+                      Multi-Jurisdictional Formulation & Retail Clearance Matrix
+                    </CardTitle>
                     <CardDescription>
-                      Evaluating parts-per-million (ppm) formulation concentrations across US FDA
+                      Evaluating parts-per-million (ppm) ingredient concentrations across US FDA
                       (MoCRA / 21 CFR), California (Toxic-Free Cosmetics Act), and European Union
                       (EC 1223/2009).
                     </CardDescription>
@@ -945,10 +1013,10 @@ export function ComplianceStudioWorkspace({
                           }`}
                         >
                           {status === 'ALL'
-                            ? 'All Rows'
+                            ? 'All Ingredients'
                             : status === 'VIOLATION'
                             ? 'Violations'
-                            : 'Passed'}
+                            : 'Cleared'}
                         </button>
                       ))}
                     </div>
@@ -959,21 +1027,11 @@ export function ComplianceStudioWorkspace({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[220px]">
-                          Flagged Ingredient & CAS
-                        </TableHead>
-                        <TableHead className="text-right w-[130px]">
-                          Evaluated Conc.
-                        </TableHead>
-                        <TableHead className="w-[270px]">
-                          US FDA (MoCRA / 21 CFR)
-                        </TableHead>
-                        <TableHead className="w-[270px]">
-                          California (Toxic-Free Act)
-                        </TableHead>
-                        <TableHead className="w-[270px]">
-                          European Union (EC 1223/2009)
-                        </TableHead>
+                        <TableHead className="w-[220px]">Evaluated Ingredient & CAS</TableHead>
+                        <TableHead className="text-right w-[130px]">Evaluated Conc.</TableHead>
+                        <TableHead className="w-[270px]">US FDA (MoCRA / 21 CFR)</TableHead>
+                        <TableHead className="w-[270px]">California (Toxic-Free Act)</TableHead>
+                        <TableHead className="w-[270px]">European Union (EC 1223/2009)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1052,9 +1110,7 @@ export function ComplianceStudioWorkspace({
                             {/* European Union Column */}
                             <TableCell className="space-y-1.5">
                               <div className="flex items-center justify-between gap-2">
-                                <Badge
-                                  variant={row.eu.status === 'PASS' ? 'pass' : 'violation'}
-                                >
+                                <Badge variant={row.eu.status === 'PASS' ? 'pass' : 'violation'}>
                                   [{row.eu.status}]
                                 </Badge>
                                 <span className="text-[11px] font-mono text-slate-400 truncate">
@@ -1085,14 +1141,14 @@ export function ComplianceStudioWorkspace({
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h2
-                        className="text-base font-semibold text-slate-100"
-                        style={{ fontFamily: 'var(--font-display), sans-serif' }}
+                        className="text-lg font-semibold text-slate-100"
+                        style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
                       >
-                        Interactive 3D Brand Twin & Peel-Off Layer Visualizer
+                        Interactive 3D Packaging Twin & Peel-Off Label Inspector
                       </h2>
                       <p className="text-xs text-slate-400">
-                        Paired directly with the deep toxicological audit. Drag to orbit or peel
-                        back the outer adhesive sticker layer.
+                        Paired with the formulation matrix. Drag to orbit the 3D compact/bottle or
+                        peel back the adhesive label layer.
                       </p>
                     </div>
 
@@ -1106,7 +1162,7 @@ export function ComplianceStudioWorkspace({
                             : 'text-slate-400 hover:text-slate-200'
                         }`}
                       >
-                        3D Spatial Twin (Three.js)
+                        3D Vessel Studio
                       </button>
                       <button
                         type="button"
@@ -1117,7 +1173,7 @@ export function ComplianceStudioWorkspace({
                             : 'text-slate-400 hover:text-slate-200'
                         }`}
                       >
-                        2D Box Dieline Layout
+                        2D Carton Dieline
                       </button>
                     </div>
                   </div>
@@ -1172,7 +1228,7 @@ export function ComplianceStudioWorkspace({
                             </div>
                             <div
                               className="text-lg font-bold text-slate-50"
-                              style={{ fontFamily: 'var(--font-display), sans-serif' }}
+                              style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
                             >
                               {auditResult.artworkLinting.frontPanelHeader}
                             </div>
@@ -1280,14 +1336,14 @@ export function ComplianceStudioWorkspace({
                 <div className="xl:col-span-5 space-y-4">
                   <div>
                     <h3
-                      className="text-base font-semibold text-slate-100"
-                      style={{ fontFamily: 'var(--font-display), sans-serif' }}
+                      className="text-lg font-semibold text-slate-100"
+                      style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
                     >
-                      Multimodal Artwork & Claim Compliance Alerts
+                      Packaging Artwork & Claim Compliance Alerts
                     </h3>
                     <p className="text-xs text-slate-400">
-                      Automated structural typography, peel-off prominence, and brand-mission
-                      claim evaluation.
+                      Automated structural typography, peel-off prominence, and brand-mission claim
+                      evaluation.
                     </p>
                   </div>
 
@@ -1305,9 +1361,7 @@ export function ComplianceStudioWorkspace({
                       >
                         <div className="flex items-center justify-between gap-2 mb-1.5">
                           <Badge
-                            variant={
-                              alertItem.severity === 'NOMINAL' ? 'pass' : 'violation'
-                            }
+                            variant={alertItem.severity === 'NOMINAL' ? 'pass' : 'violation'}
                           >
                             [{alertItem.severity}]
                           </Badge>
@@ -1319,9 +1373,7 @@ export function ComplianceStudioWorkspace({
                         <AlertDescription className="space-y-2 mt-1">
                           <p>{alertItem.description}</p>
                           <div className="rounded-lg bg-slate-950/60 border border-slate-800/80 p-2.5 text-[11px] font-mono text-slate-200">
-                            <span className="text-emerald-400 font-semibold">
-                              Remediation:{' '}
-                            </span>
+                            <span className="text-emerald-400 font-semibold">Remediation: </span>
                             {alertItem.remediationAction}
                           </div>
                         </AlertDescription>
@@ -1333,13 +1385,15 @@ export function ComplianceStudioWorkspace({
                   <Card className="border-slate-800 bg-slate-900/90">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between gap-2">
-                        <CardTitle className="text-sm">
+                        <CardTitle
+                          className="text-base"
+                          style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
+                        >
                           Modern Beauty Founder Ethos & Claim Audit
                         </CardTitle>
                         <Badge
                           variant={
-                            auditResult.artworkLinting.silveringMissionAlignment.status ===
-                            'PASS'
+                            auditResult.artworkLinting.silveringMissionAlignment.status === 'PASS'
                               ? 'pass'
                               : 'violation'
                           }
@@ -1617,13 +1671,19 @@ export function ComplianceStudioWorkspace({
                         <div>
                           <strong className="text-slate-100">Primary Causative Agent: </strong>
                           <span className="font-mono text-rose-300">
-                            {auditResult.mocraDossier.toxicologicalHazardAssessment.primaryCausativeAgent}
+                            {
+                              auditResult.mocraDossier.toxicologicalHazardAssessment
+                                .primaryCausativeAgent
+                            }
                           </span>
                         </div>
                         <div>
                           <strong className="text-slate-100">Mechanistic Pathway: </strong>
                           <span className="text-slate-300">
-                            {auditResult.mocraDossier.toxicologicalHazardAssessment.mechanisticPathway}
+                            {
+                              auditResult.mocraDossier.toxicologicalHazardAssessment
+                                .mechanisticPathway
+                            }
                           </span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 font-mono">

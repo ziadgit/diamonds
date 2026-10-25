@@ -1,16 +1,20 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, Public_Sans, JetBrains_Mono } from 'next/font/google';
+import {
+  Playfair_Display,
+  Plus_Jakarta_Sans,
+  JetBrains_Mono,
+} from 'next/font/google';
 import './globals.css';
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['500', '600', '700'],
+  variable: '--font-serif',
+});
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  weight: ['600', '700'],
-  variable: '--font-display',
-});
-
-const publicSans = Public_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-sans',
 });
 
@@ -21,20 +25,20 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'OpenCompact — Open-Source Cosmetic Compliance Engine & 3D Brand Twin Simulator',
+  title: 'OpenCompact — Prestige Beauty Formulation & Regulatory Atelier',
   description:
-    'Open-source regulatory intelligence platform and developer studio powered by Gemini 4 Argon. Audit cosmetic formulations, 3D packaging artwork layers, and 15-day MoCRA adverse event dossiers across US FDA, California, and the EU.',
+    'The prestige cosmetic formulation, 3D packaging studio, and global regulatory compliance maison powered by Gemini 4 Argon. Built for modern beauty founders and brands.',
   openGraph: {
-    title: 'OpenCompact — Open-Source Cosmetic Compliance Engine & 3D Brand Twin Simulator',
+    title: 'OpenCompact — Prestige Beauty Formulation & Regulatory Atelier',
     description:
-      'Open-source regulatory intelligence platform and developer studio powered by Gemini 4 Argon.',
+      'The prestige cosmetic formulation, 3D packaging studio, and global regulatory compliance maison powered by Gemini 4 Argon.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'OpenCompact — Open-Source Cosmetic Compliance Engine & 3D Brand Twin Simulator',
+    title: 'OpenCompact — Prestige Beauty Formulation & Regulatory Atelier',
     description:
-      'Open-source regulatory intelligence platform and developer studio powered by Gemini 4 Argon.',
+      'The prestige cosmetic formulation, 3D packaging studio, and global regulatory compliance maison powered by Gemini 4 Argon.',
   },
 };
 
@@ -42,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${plusJakarta.variable} ${publicSans.variable} ${jetbrainsMono.variable} dark`}
+      className={`${playfair.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} dark`}
     >
       <body
         suppressHydrationWarning
