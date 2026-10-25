@@ -51,6 +51,56 @@ export interface ArtworkLintingReport {
   alerts: ComplianceAlertItem[];
 }
 
+export interface ArgonProcedural3DPart {
+  partName: string;
+  geometryType:
+    | 'cylinder'
+    | 'box'
+    | 'sphere'
+    | 'torus'
+    | 'octahedron'
+    | 'dodecahedron'
+    | 'cone'
+    | 'capsule'
+    | 'ring';
+  dimensions: [number, number, number];
+  radialSegments?: number;
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: [number, number, number];
+  materialType:
+    | 'porcelain'
+    | 'metallic'
+    | 'frosted-glass'
+    | 'pigment-silk'
+    | 'crystal-gem';
+  colorHex: string;
+  roughness?: number;
+  metalness?: number;
+  transmission?: number;
+}
+
+export interface ArgonProcedural3DModel {
+  generatedByModel: string;
+  modelTitle: string;
+  architecturalNotes: string;
+  silhouetteFamily:
+    | 'octagonal-couture-compact'
+    | 'round-cushion-compact'
+    | 'amphora-lathe-flacon'
+    | 'faceted-camellia-jar'
+    | 'fluted-lipstick-tower'
+    | 'custom-argon-assembly';
+  latheProfilePoints?: Array<{ r: number; y: number }>;
+  latheSegments?: number;
+  latheMaterialType?: 'porcelain' | 'frosted-glass' | 'metallic';
+  latheColorHex?: string;
+  customPrimitives: ArgonProcedural3DPart[];
+  frontPlaquePosition?: [number, number, number];
+  frontPlaqueRotation?: [number, number, number];
+  backPlaquePosition?: [number, number, number];
+}
+
 export interface BrandTwin3DSpec {
   vesselArchetype: 'pressed-palette' | 'dropper-serum' | 'airless-pump';
   brandName: string;
@@ -70,6 +120,7 @@ export interface BrandTwin3DSpec {
   peelOffBuriedWarningText: string;
   frontPanelClaims: string[];
   videoIngestionSummary?: string;
+  procedural3DModel?: ArgonProcedural3DModel;
 }
 
 export interface UrlRemixMetadata {
@@ -1778,11 +1829,11 @@ export function synthesizeUrlBrandResult(
   // Mode 2: Generate a Similar-But-Distinct 100% Compliant Brand Variant from ANY URL or Prompt
   const hashNum = cleanUrl
     .split('')
-    .reduce((acc, ch, idx) => acc + ch.charCodeAt(0) * (idx + 1), 0);
+    .reduce((acc, ch, idx) => acc + ch.charCodeAt(0) * (idx + 1) * 17, 0);
 
   const FEMININE_BRAND_THEMES = [
     {
-      house: 'MAISON ROSERAIE PARIS',
+      house: 'SÉRÉNITÉ BOTANIQUE',
       suffix: 'SOIE DE PIVOINE',
       primaryHex: '#F9E8EC',
       secondaryHex: '#F2D2D9',
@@ -1802,7 +1853,7 @@ export function synthesizeUrlBrandResult(
       ],
     },
     {
-      house: 'ATELIER CÉLESTE BEAUTÉ',
+      house: 'VELOURS D’AURORE',
       suffix: 'VOILE DE NACRE',
       primaryHex: '#F7EFE8',
       secondaryHex: '#EAD8C9',
@@ -1822,7 +1873,7 @@ export function synthesizeUrlBrandResult(
       ],
     },
     {
-      house: 'LUMIÈRE DE CAMÉLIA',
+      house: 'LUEUR DE CAMÉLIA',
       suffix: 'ÉCLAT VELOURS',
       primaryHex: '#F3ECF8',
       secondaryHex: '#E2D4F0',
@@ -1842,7 +1893,7 @@ export function synthesizeUrlBrandResult(
       ],
     },
     {
-      house: 'MAISON FLEUR D’ORANGER',
+      house: 'NACRE & PÉTALE',
       suffix: 'CRÈME DE CACHEMIRE',
       primaryHex: '#FBF0EA',
       secondaryHex: '#F2DCCF',
@@ -1861,6 +1912,86 @@ export function synthesizeUrlBrandResult(
         '#B56576',
       ],
     },
+    {
+      house: 'OPALINE STUDIO',
+      suffix: 'BRUME D’IRIS',
+      primaryHex: '#F8EEF2',
+      secondaryHex: '#EDD7E0',
+      accentHex: '#B85D6F',
+      liquidHex: '#F4B2C1',
+      finish: 'gold' as const,
+      pans: [
+        '#D9778B',
+        '#F3C4CE',
+        '#C4697B',
+        '#E8B4BC',
+        '#B85D6F',
+        '#F6E2D3',
+        '#CFA0A9',
+        '#FFF6F8',
+        '#9E4758',
+      ],
+    },
+    {
+      house: 'CÉLESTE LABORATORY',
+      suffix: 'ÉLIXIR BORÉAL',
+      primaryHex: '#F4EFFA',
+      secondaryHex: '#E4D8F3',
+      accentHex: '#9E7BB5',
+      liquidHex: '#A78BFA',
+      finish: 'platinum' as const,
+      pans: [
+        '#A78BFA',
+        '#C4B5FD',
+        '#E9D5FF',
+        '#F472B6',
+        '#DDD6FE',
+        '#C084FC',
+        '#FBCFE8',
+        '#EDE9FE',
+        '#7C3AED',
+      ],
+    },
+    {
+      house: 'SOLSTICE FLORA',
+      suffix: 'NECTAR DE ROSE',
+      primaryHex: '#FAF2EE',
+      secondaryHex: '#EFE0D8',
+      accentHex: '#C97A63',
+      liquidHex: '#F59E8B',
+      finish: 'gold' as const,
+      pans: [
+        '#C97A63',
+        '#E8B4A2',
+        '#D98A76',
+        '#F4D5C8',
+        '#B86B55',
+        '#EED2B8',
+        '#D49B8E',
+        '#FFF8F5',
+        '#9C5240',
+      ],
+    },
+    {
+      house: 'VESPERA BEAUTÉ',
+      suffix: 'SATIN D’ORCHIDÉE',
+      primaryHex: '#F9EBF0',
+      secondaryHex: '#F0D5DF',
+      accentHex: '#C2647A',
+      liquidHex: '#E58096',
+      finish: 'gold' as const,
+      pans: [
+        '#C2647A',
+        '#ECA8B8',
+        '#D67B90',
+        '#F7DCE2',
+        '#B04E65',
+        '#E3B7A0',
+        '#CFA0AD',
+        '#FFF4F7',
+        '#8F3B50',
+      ],
+    },
   ];
 
   const chosenTheme = FEMININE_BRAND_THEMES[hashNum % FEMININE_BRAND_THEMES.length];
@@ -1871,13 +2002,361 @@ export function synthesizeUrlBrandResult(
     ? 'dropper-serum'
     : 'pressed-palette';
 
-  const distinctBrandName = chosenTheme.house;
+  // Extract a distinctive keyword from the URL/prompt so every generated brand has a unique name
+  const STOP_WORDS = new Set([
+    'HTTPS',
+    'HTTP',
+    'WWW',
+    'COM',
+    'PRODUCT',
+    'PRODUCTS',
+    'SHOP',
+    'SEPHORA',
+    'ULTA',
+    'BEAUTE',
+    'BEAUTY',
+    'PALETTE',
+    'PRIMER',
+    'SERUM',
+    'TONER',
+    'ELIXIR',
+    'COMPACT',
+    'PRESSED',
+    'PIGMENT',
+    'THE',
+    'AND',
+    'FOR',
+    'WITH',
+    'SIGNATURE',
+    'COSMETIC',
+    'FORMULATION',
+    'URL',
+  ]);
+  const candidateWords = slugTitle
+    .toUpperCase()
+    .replace(/[^A-ZÀ-ÿ0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length >= 4 && !STOP_WORDS.has(w) && !/^\d+$/.test(w));
+
+  const BRAND_SUFFIX_ARCHETYPES = [
+    'BOTANIQUE',
+    'ATELIER',
+    'LABORATORY',
+    'STUDIO',
+    'BEAUTÉ',
+    'LUMIÈRE',
+    'COUTURE',
+    'COLLECTION',
+  ];
+
+  let distinctBrandName = chosenTheme.house;
+  if (lower.includes('neon-obsessions') || lower.includes('p445729')) {
+    distinctBrandName = 'SÉRÉNITÉ CHROMATIQUE';
+  } else if (lower.includes('velvet-blur') || lower.includes('pimprod2041982')) {
+    distinctBrandName = 'NACRE & PÉTALE STUDIO';
+  } else if (lower.includes('silver-amplifying') || lower.includes('silveringbeauty')) {
+    distinctBrandName = 'CÉLESTE ARGENTÉE';
+  } else if (candidateWords.length > 0) {
+    const signatureWord = candidateWords[0].slice(0, 12);
+    const houseFirstWord = chosenTheme.house.split(' ')[0];
+    const archetypeSuffix =
+      BRAND_SUFFIX_ARCHETYPES[hashNum % BRAND_SUFFIX_ARCHETYPES.length];
+    distinctBrandName =
+      hashNum % 2 === 0
+        ? `${houseFirstWord} ${signatureWord}`
+        : `${signatureWord} ${archetypeSuffix}`;
+  }
+
   const distinctProductTitle = `${slugTitle.toUpperCase().slice(0, 18)} · ${chosenTheme.suffix}`;
+
+  const proceduralFamilies: Array<ArgonProcedural3DModel> = [
+    {
+      generatedByModel: 'models/gemini-4-argon',
+      modelTitle: 'Octagonal Couture Cushion Compact with Rose-Quartz Finial',
+      architecturalNotes:
+        'Bespoke 8-sided Parisian porcelain cushion compact featuring a stepped rose-gold gallery rim, hinged bevel mirror lid, 6 petal-arranged silk pigment pans, and a faceted rose-quartz crystal clasp.',
+      silhouetteFamily: 'octagonal-couture-compact',
+      customPrimitives: [
+        {
+          partName: 'Octagonal Porcelain Lower Case Hull',
+          geometryType: 'cylinder',
+          dimensions: [1.38, 1.46, 0.34],
+          radialSegments: 8,
+          position: [0, -0.35, 0],
+          materialType: 'porcelain',
+          colorHex: chosenTheme.primaryHex,
+          roughness: 0.24,
+        },
+        {
+          partName: 'Brushed Rose-Gold Octagonal Gallery Rim',
+          geometryType: 'cylinder',
+          dimensions: [1.32, 1.32, 0.08],
+          radialSegments: 8,
+          position: [0, -0.15, 0],
+          materialType: 'metallic',
+          colorHex: '#E6B99C',
+          metalness: 0.9,
+          roughness: 0.16,
+        },
+        {
+          partName: 'Central Silk Cushion Foundation Core',
+          geometryType: 'cylinder',
+          dimensions: [0.58, 0.58, 0.06],
+          radialSegments: 36,
+          position: [0, -0.09, 0],
+          materialType: 'pigment-silk',
+          colorHex: chosenTheme.pans[0],
+          roughness: 0.42,
+        },
+        ...chosenTheme.pans.slice(1, 7).map((panHex, idx) => {
+          const angle = (idx / 6) * Math.PI * 2;
+          return {
+            partName: `Petal Shade Satellite Pan #${idx + 1}`,
+            geometryType: 'cylinder' as const,
+            dimensions: [0.24, 0.24, 0.05] as [number, number, number],
+            radialSegments: 24,
+            position: [
+              Math.cos(angle) * 0.92,
+              -0.09,
+              Math.sin(angle) * 0.92,
+            ] as [number, number, number],
+            materialType: 'pigment-silk' as const,
+            colorHex: panHex,
+            roughness: 0.35,
+          };
+        }),
+        {
+          partName: 'Hinged Octagonal Couture Upper Lid',
+          geometryType: 'cylinder',
+          dimensions: [1.36, 1.36, 0.14],
+          radialSegments: 8,
+          position: [0, 0.78, -0.95],
+          rotation: [1.05, 0, 0],
+          materialType: 'porcelain',
+          colorHex: chosenTheme.secondaryHex,
+          roughness: 0.22,
+        },
+        {
+          partName: 'Optical Vanity Mirror Insert',
+          geometryType: 'cylinder',
+          dimensions: [1.14, 1.14, 0.03],
+          radialSegments: 8,
+          position: [0, 0.72, -0.88],
+          rotation: [1.05, 0, 0],
+          materialType: 'metallic',
+          colorHex: '#FFFDFB',
+          metalness: 0.98,
+          roughness: 0.04,
+        },
+        {
+          partName: 'Faceted Rose-Quartz Crystal Clasp Gem',
+          geometryType: 'octahedron',
+          dimensions: [0.22, 0, 0],
+          position: [0, -0.25, 1.38],
+          materialType: 'crystal-gem',
+          colorHex: chosenTheme.accentHex,
+          transmission: 0.85,
+          roughness: 0.08,
+        },
+      ],
+      frontPlaquePosition: [0, -0.35, 1.43],
+      backPlaquePosition: [0, -0.35, -1.43],
+    },
+    {
+      generatedByModel: 'models/gemini-4-argon',
+      modelTitle: 'Sculpted Amphora Lathe Elixir Flacon with Floating Peony Core',
+      architecturalNotes:
+        'Revolved optical glass amphora vessel created via custom Lathe profile points, housing a suspended luminescent botanical pearl core, double rose-gold torus collar rings, and a faceted dodecahedron crystal stopper.',
+      silhouetteFamily: 'amphora-lathe-flacon',
+      latheProfilePoints: [
+        { r: 0.01, y: -1.25 },
+        { r: 0.68, y: -1.25 },
+        { r: 0.86, y: -0.75 },
+        { r: 0.56, y: -0.1 },
+        { r: 0.78, y: 0.42 },
+        { r: 0.34, y: 0.82 },
+        { r: 0.42, y: 1.05 },
+        { r: 0.01, y: 1.05 },
+      ],
+      latheSegments: 48,
+      latheMaterialType: 'frosted-glass',
+      latheColorHex: chosenTheme.primaryHex,
+      customPrimitives: [
+        {
+          partName: 'Heavy Brushed Gold Pedestal Foot',
+          geometryType: 'cylinder',
+          dimensions: [0.7, 0.74, 0.16],
+          radialSegments: 48,
+          position: [0, -1.26, 0],
+          materialType: 'metallic',
+          colorHex: '#E6B99C',
+          metalness: 0.92,
+          roughness: 0.15,
+        },
+        {
+          partName: 'Suspended Botanical Lustre Elixir Core',
+          geometryType: 'capsule',
+          dimensions: [0.42, 0.75, 16],
+          position: [0, -0.32, 0],
+          materialType: 'pigment-silk',
+          colorHex: chosenTheme.liquidHex,
+          roughness: 0.2,
+        },
+        {
+          partName: 'Double Couture Torus Neck Ring #1',
+          geometryType: 'torus',
+          dimensions: [0.38, 0.045, 16],
+          position: [0, 0.86, 0],
+          rotation: [Math.PI / 2, 0, 0],
+          materialType: 'metallic',
+          colorHex: '#E6B99C',
+        },
+        {
+          partName: 'Double Couture Torus Neck Ring #2',
+          geometryType: 'torus',
+          dimensions: [0.41, 0.035, 16],
+          position: [0, 0.96, 0],
+          rotation: [Math.PI / 2, 0, 0],
+          materialType: 'metallic',
+          colorHex: chosenTheme.accentHex,
+        },
+        {
+          partName: 'Faceted Rose-Crystal Crown Stopper',
+          geometryType: 'dodecahedron',
+          dimensions: [0.44, 0, 0],
+          position: [0, 1.38, 0],
+          materialType: 'crystal-gem',
+          colorHex: chosenTheme.accentHex,
+          transmission: 0.88,
+          roughness: 0.06,
+        },
+      ],
+      frontPlaquePosition: [0, -0.25, 0.86],
+      backPlaquePosition: [0, -0.25, -0.86],
+    },
+    {
+      generatedByModel: 'models/gemini-4-argon',
+      modelTitle: 'Faceted Camellia Porcelain Jar & Sculpted Petal Crown',
+      architecturalNotes:
+        '12-sided fluted porcelain crème vessel paired with a rose-gold waist belt, inner whipped-silk emulsion dome, and an oversized sculpted camellia crown cap.',
+      silhouetteFamily: 'faceted-camellia-jar',
+      customPrimitives: [
+        {
+          partName: '12-Faceted Fluted Porcelain Crème Vessel',
+          geometryType: 'cylinder',
+          dimensions: [1.05, 0.92, 1.18],
+          radialSegments: 12,
+          position: [0, -0.52, 0],
+          materialType: 'porcelain',
+          colorHex: chosenTheme.primaryHex,
+          roughness: 0.25,
+        },
+        {
+          partName: 'Rose-Gold Couture Waist Belt Ring',
+          geometryType: 'torus',
+          dimensions: [1.02, 0.055, 20],
+          position: [0, -0.1, 0],
+          rotation: [Math.PI / 2, 0, 0],
+          materialType: 'metallic',
+          colorHex: '#E6B99C',
+        },
+        {
+          partName: 'Whipped Cashmere Silk Emulsion Dome',
+          geometryType: 'sphere',
+          dimensions: [0.84, 32, 16],
+          position: [0, 0.05, 0],
+          scale: [1, 0.45, 1],
+          materialType: 'pigment-silk',
+          colorHex: chosenTheme.pans[1] || chosenTheme.secondaryHex,
+          roughness: 0.3,
+        },
+        {
+          partName: 'Floating Camellia Gold Overcap Disc',
+          geometryType: 'cylinder',
+          dimensions: [1.08, 1.08, 0.26],
+          radialSegments: 12,
+          position: [0, 0.68, 0],
+          materialType: 'metallic',
+          colorHex: '#E6B99C',
+        },
+        {
+          partName: 'Crystal Finial Crown Jewel',
+          geometryType: 'octahedron',
+          dimensions: [0.32, 0, 0],
+          position: [0, 1.04, 0],
+          materialType: 'crystal-gem',
+          colorHex: chosenTheme.accentHex,
+        },
+      ],
+      frontPlaquePosition: [0, -0.52, 1.06],
+      backPlaquePosition: [0, -0.52, -1.06],
+    },
+    {
+      generatedByModel: 'models/gemini-4-argon',
+      modelTitle: 'Fluted Parisian Couture Tower & Beveled Satin Bullet',
+      architecturalNotes:
+        'Architectural tiered hexagonal porcelain and rose-gold column housing a satin-bevel pigment core and translucent glass gallery dome.',
+      silhouetteFamily: 'fluted-lipstick-tower',
+      customPrimitives: [
+        {
+          partName: 'Hexagonal Porcelain Base Pedestal Column',
+          geometryType: 'cylinder',
+          dimensions: [0.68, 0.76, 1.15],
+          radialSegments: 6,
+          position: [0, -0.62, 0],
+          materialType: 'porcelain',
+          colorHex: chosenTheme.primaryHex,
+        },
+        {
+          partName: 'Stepped Rose-Gold Mid Gallery',
+          geometryType: 'cylinder',
+          dimensions: [0.58, 0.66, 0.45],
+          radialSegments: 6,
+          position: [0, 0.16, 0],
+          materialType: 'metallic',
+          colorHex: '#E6B99C',
+        },
+        {
+          partName: 'Sculpted Satin Pigment Bullet Core',
+          geometryType: 'cone',
+          dimensions: [0.42, 0.95, 32],
+          position: [0, 0.82, 0],
+          materialType: 'pigment-silk',
+          colorHex: chosenTheme.accentHex,
+          roughness: 0.28,
+        },
+        {
+          partName: 'Optical Crystal Protective Cloche',
+          geometryType: 'cylinder',
+          dimensions: [0.62, 0.62, 1.25],
+          radialSegments: 32,
+          position: [0, 0.82, 0],
+          materialType: 'frosted-glass',
+          colorHex: '#FFFFFF',
+          transmission: 0.88,
+        },
+        {
+          partName: 'Top Pearl Finial Sphere',
+          geometryType: 'sphere',
+          dimensions: [0.22, 24, 24],
+          position: [0, 1.56, 0],
+          materialType: 'porcelain',
+          colorHex: '#FFFDFB',
+          roughness: 0.12,
+        },
+      ],
+      frontPlaquePosition: [0, -0.62, 0.75],
+      backPlaquePosition: [0, -0.62, -0.75],
+    },
+  ];
+
+  const chosenProcedural3DModel =
+    proceduralFamilies[hashNum % proceduralFamilies.length];
 
   return {
     presetId: `remix-${hashNum}`,
     auditTimestamp: new Date().toISOString(),
-    modelEngine: 'models/gemini-4-argon (URL-to-Compliant Brand Remixer)',
+    modelEngine: 'models/gemini-4-argon (URL-to-Compliant 3D Brand Remixer)',
     productName: `${distinctBrandName} — ${slugTitle} (${chosenTheme.suffix})`,
     productCategory:
       vesselArchetype === 'pressed-palette'
@@ -1912,6 +2391,7 @@ export function synthesizeUrlBrandResult(
         'GLOBALLY COMPLIANT CLEAN REFORMULATION',
         'POSITIVE, MISSION-ALIGNED COSMETIC POSITIONING',
       ],
+      procedural3DModel: chosenProcedural3DModel,
     },
     urlRemixMetadata: {
       sourceUrl: cleanUrl,

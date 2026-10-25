@@ -133,7 +133,10 @@ function createDefaultNotebooks(): UserBrandNotebook[] {
       sourceInput: preset.url,
       mode: 'generate-distinct-brand',
       createdAt: idx === 0 ? 'Just now' : idx === 1 ? 'Yesterday' : 'Oct 22',
-      result: synthesized,
+      result: {
+        ...synthesized,
+        auditTimestamp: '2026-10-25T12:00:00.000Z',
+      },
       twinOverride: { ...synthesized.brandTwin3D },
       peelAmount: 0,
       selectedSwatchIdx: 0,
@@ -152,12 +155,13 @@ export default function OpenCompactPage() {
   >('new-prompt');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // User Notebooks state (persisted in localStorage)
+  // User Notebooks state (initialized identically on SSR and first client render to prevent hydration mismatch)
   const [notebooks, setNotebooks] = useState<UserBrandNotebook[]>(() =>
     createDefaultNotebooks()
   );
   const [activeNotebookId, setActiveNotebookId] =
     useState<string>('notebook-seed-1');
+  const [hasHydratedStorage, setHasHydratedStorage] = useState(false);
 
   // Minimalist omnibar prompt/URL state
   const [promptInput, setPromptInput] = useState('');
@@ -174,38 +178,47 @@ export default function OpenCompactPage() {
   const [copiedReadme, setCopiedReadme] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
 
-  // Load saved notebooks from localStorage on mount
+  // Hydrate saved notebooks from localStorage on client post-hydration frame
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('opencompact_feminine_notebooks_v3');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setNotebooks(parsed);
-          setActiveNotebookId(parsed[0].id);
+    const frameId = window.requestAnimationFrame(() => {
+      try {
+        const saved = localStorage.getItem('opencompact_feminine_notebooks_v4');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setNotebooks(parsed);
+            setActiveNotebookId(parsed[0].id);
+          }
         }
+      } catch {
+        // Fallback to default notebooks
       }
-    } catch {
-      // Fallback to default notebooks
-    }
+      setHasHydratedStorage(true);
+    });
+    return () => window.cancelAnimationFrame(frameId);
   }, []);
 
-  // Save notebooks whenever updated
+  // Save notebooks whenever updated after initial storage hydration
   useEffect(() => {
+    if (!hasHydratedStorage) return;
     try {
       localStorage.setItem(
-        'opencompact_feminine_notebooks_v3',
+        'opencompact_feminine_notebooks_v4',
         JSON.stringify(notebooks)
       );
     } catch {
       // Ignore quota errors
     }
-  }, [notebooks]);
+  }, [notebooks, hasHydratedStorage]);
 
   const activeNotebook =
     notebooks.find((n) => n.id === activeNotebookId) || notebooks[0];
 
+  const [argon3DPrompt, setArgon3DPrompt] = useState('');
+  const [isGenerating3D, setIsGenerating3D] = useState(false);
+
   // Create a new Notebook from any URL or natural language brand prompt
+  // Calls both /api/compliance and /api/argon-3d (models/gemini-4-argon) to generate a new 3D model
   const handleCreateRemixNotebook = async (
     rawInputText?: string,
     overrideMode?: 'generate-distinct-brand' | 'audit-url'
@@ -222,18 +235,34 @@ export default function OpenCompactPage() {
     );
 
     try {
-      const res = await fetch('/api/compliance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          urlMode: chosenMode,
-          sourceProductUrl: query,
-          brandPrompt: `Synthesize a feminine Parisian luxury 3D packaging twin and compliant formulation for: ${query}`,
-          formulationRaw: SAMPLE_PRODUCT_URLS[0].defaultFormulation,
+      const [complianceRes, argon3DRes] = await Promise.allSettled([
+        fetch('/api/compliance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            urlMode: chosenMode,
+            sourceProductUrl: query,
+            brandPrompt: `Synthesize a feminine Parisian luxury 3D packaging twin and compliant formulation for: ${query}`,
+            formulationRaw: SAMPLE_PRODUCT_URLS[0].defaultFormulation,
+          }),
         }),
-      });
-      if (res.ok) {
-        const data = await res.json();
+        fetch('/api/argon-3d', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: query,
+            brandName: newResult.brandTwin3D.brandName,
+            productTitle: newResult.brandTwin3D.productTitle,
+            primaryColorHex: newResult.brandTwin3D.primaryColorHex,
+            secondaryColorHex: newResult.brandTwin3D.secondaryColorHex,
+            accentColorHex: newResult.brandTwin3D.accentColorHex,
+            palettePanColorsHex: newResult.brandTwin3D.palettePanColorsHex,
+          }),
+        }),
+      ]);
+
+      if (complianceRes.status === 'fulfilled' && complianceRes.value.ok) {
+        const data = await complianceRes.value.json();
         if (
           data &&
           data.brandTwin3D &&
@@ -243,8 +272,25 @@ export default function OpenCompactPage() {
           newResult = data;
         }
       }
+
+      if (argon3DRes.status === 'fulfilled' && argon3DRes.value.ok) {
+        const data3D = await argon3DRes.value.json();
+        if (
+          data3D?.procedural3DModel &&
+          Array.isArray(data3D.procedural3DModel.customPrimitives) &&
+          data3D.procedural3DModel.customPrimitives.length > 0
+        ) {
+          newResult = {
+            ...newResult,
+            brandTwin3D: {
+              ...newResult.brandTwin3D,
+              procedural3DModel: data3D.procedural3DModel,
+            },
+          };
+        }
+      }
     } catch {
-      // Deterministic synthesizer already prepared `newResult` with full 3D twin
+      // Deterministic synthesizer already prepared `newResult` with procedural3DModel
     }
 
     const newNotebook: UserBrandNotebook = {
@@ -265,6 +311,48 @@ export default function OpenCompactPage() {
     setFollowUpInput('');
     setIsSynthesizing(false);
     setViewMode('notebook');
+  };
+
+  // Dedicated live Gemini 4 Argon 3D Model Sculptor for the active notebook
+  const handleSculptNew3DWithArgon = async (customDesignBrief?: string) => {
+    if (!activeNotebook) return;
+    const designBrief =
+      (customDesignBrief ?? argon3DPrompt).trim() ||
+      `Bespoke Parisian couture 3D vessel for ${activeNotebook.twinOverride.brandName} — ${activeNotebook.twinOverride.productTitle}`;
+
+    setIsGenerating3D(true);
+    try {
+      const res = await fetch('/api/argon-3d', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: designBrief,
+          brandName: activeNotebook.twinOverride.brandName,
+          productTitle: activeNotebook.twinOverride.productTitle,
+          primaryColorHex: activeNotebook.twinOverride.primaryColorHex,
+          secondaryColorHex: activeNotebook.twinOverride.secondaryColorHex,
+          accentColorHex: activeNotebook.twinOverride.accentColorHex,
+          palettePanColorsHex: activeNotebook.twinOverride.palettePanColorsHex,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (
+          data?.procedural3DModel &&
+          Array.isArray(data.procedural3DModel.customPrimitives) &&
+          data.procedural3DModel.customPrimitives.length > 0
+        ) {
+          handleUpdateActiveTwin({
+            procedural3DModel: data.procedural3DModel,
+          });
+          setArgon3DPrompt('');
+        }
+      }
+    } catch {
+      // Keep current model on transient failure
+    } finally {
+      setIsGenerating3D(false);
+    }
   };
 
   const handleUpdateActiveTwin = (partial: Partial<BrandTwin3DSpec>) => {
@@ -887,10 +975,99 @@ export default function OpenCompactPage() {
 
               {/* HERO ROW OF NOTEBOOK: LIVE 3D PRODUCT MOCKUP (LEFT) + BRAND & SHADE ATELIER (RIGHT) */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {/* Left 7 Columns: Live Interactive Three.js 3D Product Mockup + Casing Customizer */}
+                {/* Left 7 Columns: Live Interactive Three.js 3D Product Mockup + Argon 3D CAD Sculptor */}
                 <div className="lg:col-span-7 space-y-4">
+                  {/* Live Gemini 4 Argon 3D CAD Sculptor Bar */}
+                  <div className="p-4 rounded-2xl bg-white border border-[#EADCD7] shadow-2xs space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-[#B85D6F]" />
+                        <span className="text-xs font-semibold text-[#281E1C]">
+                          Gemini 4 Argon 3D Model Sculptor
+                        </span>
+                        <span className="text-[10px] font-mono text-[#9E4758] bg-[#FBF2F3] border border-[#E5C1C8] px-2 py-0.5 rounded-full">
+                          models/gemini-4-argon
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-[#7A6A65]">
+                        Synthesize a brand-new multi-part 3D CAD vessel
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={argon3DPrompt}
+                        onChange={(e) => setArgon3DPrompt(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSculptNew3DWithArgon();
+                        }}
+                        placeholder="Describe a new 3D vessel (e.g. 'Octagonal porcelain compact with rose-quartz crystal gem', 'Sculpted amphora bottle')..."
+                        className="flex-1 bg-[#FAF6F3] border border-[#EADCD7] rounded-full px-4 py-2 text-xs text-[#281E1C] placeholder:text-[#A69590] focus:outline-none focus:border-[#B85D6F]"
+                      />
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleSculptNew3DWithArgon()}
+                        disabled={isGenerating3D}
+                        className="rounded-full shrink-0"
+                      >
+                        {isGenerating3D ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            Argon Sculpting 3D...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Generate 3D Model
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* 1-Click Argon 3D Silhouette Generators */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[10px] uppercase tracking-wider text-[#8C7A75] mr-1">
+                        Sculpt with Argon:
+                      </span>
+                      {[
+                        {
+                          label: 'Octagonal Cushion Compact',
+                          prompt:
+                            'Octagonal blush porcelain cushion compact with stepped rose-gold gallery rim, open mirror lid, 6 petal-arranged silk pigment pans, and faceted rose-quartz gem clasp',
+                        },
+                        {
+                          label: 'Amphora Lathe Elixir Flacon',
+                          prompt:
+                            'Curved amphora glass elixir flacon revolved on a lathe with suspended botanical pearl capsule, double gold torus collar rings, and faceted dodecahedron crystal stopper',
+                        },
+                        {
+                          label: '12-Faceted Camellia Crème Jar',
+                          prompt:
+                            '12-sided fluted porcelain camellia crème jar with rose-gold waist belt, whipped cashmere emulsion dome, and crystal crown jewel finial',
+                        },
+                        {
+                          label: 'Tiered Parisian Lipstick Tower',
+                          prompt:
+                            'Hexagonal porcelain & rose-gold lipstick tower with beveled satin rose pigment bullet, translucent crystal cloche dome, and top pearl sphere finial',
+                        },
+                      ].map((preset3D) => (
+                        <button
+                          key={preset3D.label}
+                          type="button"
+                          disabled={isGenerating3D}
+                          onClick={() => handleSculptNew3DWithArgon(preset3D.prompt)}
+                          className="px-2.5 py-1 rounded-full text-[11px] bg-[#FAF6F3] hover:bg-[#FBF2F3] border border-[#EADCD7] hover:border-[#D6958E] text-[#574945] hover:text-[#281E1C] transition-all cursor-pointer"
+                        >
+                          {preset3D.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Live 3D Casing & Vessel Finish Toolbar */}
-                  <div className="p-4 rounded-2xl bg-white border border-[#EADCD7] shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                  <div className="p-3.5 rounded-2xl bg-white border border-[#EADCD7] shadow-2xs flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <Palette className="w-4 h-4 text-[#B85D6F]" />
                       <span className="text-xs font-medium text-[#281E1C]">
@@ -941,10 +1118,58 @@ export default function OpenCompactPage() {
                     linting={activeNotebook.result.artworkLinting}
                     peelAmount={activeNotebook.peelAmount}
                     onPeelAmountChange={handleUpdatePeelAmount}
-                    onVesselArchetypeChange={(archetype) =>
-                      handleUpdateActiveTwin({ vesselArchetype: archetype })
-                    }
                   />
+
+                  {/* Gemini 4 Argon 3D CAD Scene Graph Telemetry Card */}
+                  {activeNotebook.twinOverride.procedural3DModel && (
+                    <div className="p-4 rounded-2xl bg-white border border-[#EADCD7] shadow-2xs space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs font-semibold text-[#281E1C] flex items-center gap-1.5">
+                          <Box className="w-3.5 h-3.5 text-[#B85D6F]" />
+                          <span>
+                            Argon 3D Assembly:{' '}
+                            {activeNotebook.twinOverride.procedural3DModel.modelTitle}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-[#7A6A65]">
+                          {
+                            activeNotebook.twinOverride.procedural3DModel
+                              .customPrimitives.length
+                          }{' '}
+                          Procedural Meshes
+                          {activeNotebook.twinOverride.procedural3DModel
+                            .latheProfilePoints?.length
+                            ? ` + ${activeNotebook.twinOverride.procedural3DModel.latheProfilePoints.length}-Pt Lathe Hull`
+                            : ''}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#6E5D58] leading-relaxed">
+                        {
+                          activeNotebook.twinOverride.procedural3DModel
+                            .architecturalNotes
+                        }
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {activeNotebook.twinOverride.procedural3DModel.customPrimitives.map(
+                          (part, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FAF6F3] border border-[#EADCD7] text-[10px] text-[#574945]"
+                            >
+                              <span
+                                className="w-2 h-2 rounded-full border border-[#281E1C]/15"
+                                style={{ backgroundColor: part.colorHex }}
+                              />
+                              <span>{part.partName}</span>
+                              <span className="font-mono text-[#9E8C86]">
+                                ({part.geometryType})
+                              </span>
+                            </span>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Right 5 Columns: Remixed Brand Identity, Clickable Shade Swatches, & Clean Substitutions */}

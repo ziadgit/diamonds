@@ -138,15 +138,6 @@ export function ComplianceStudioWorkspace({
   const mediaFileInputRef = useRef<HTMLInputElement | null>(null);
   const mainCanvasTopRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (initialCustomAuditResult) {
-      setAuditResult(initialCustomAuditResult);
-      setProductName(initialCustomAuditResult.productName);
-      setProductCategory(initialCustomAuditResult.productCategory);
-      setPeelAmount(initialCustomAuditResult.brandTwin3D.hasPeelOffStickerTrap ? 75 : 0);
-    }
-  }, [initialCustomAuditResult]);
-
   const triggerLongDecodeSequence = (callback?: () => void) => {
     setIsDecodingDossier(true);
     setDecodeStepText('Indexing 21 U.S.C. § 364a (MoCRA Section 605) & clinical triage logs...');
@@ -379,18 +370,17 @@ export function ComplianceStudioWorkspace({
       {/* Studio Top Bar Contract (3-Zone Header in Light Feminine Porcelain) */}
       <header className="flex items-center justify-between gap-8 px-6 py-3.5 border-b border-[#EADCD7] bg-white/95 backdrop-blur-md sticky top-0 z-30">
         {/* Zone 1: Bespoke Rose-Gold & Porcelain Compact Logo */}
-        <a
-          href="/"
-          onClick={(e) => {
+        <button
+          type="button"
+          onClick={() => {
             if (onBackToLanding) {
-              e.preventDefault();
               onBackToLanding();
             }
           }}
-          className="shrink-0"
+          className="shrink-0 text-left focus:outline-none"
         >
           <OpenCompactLogo size="sm" showSubtitle={false} />
-        </a>
+        </button>
 
         {/* Zone 2: Concise Navigation Links */}
         <nav className="hidden md:flex items-center gap-8 text-[11px] font-medium tracking-[0.2em] uppercase text-[#786662]">
@@ -828,15 +818,6 @@ export function ComplianceStudioWorkspace({
                 linting={auditResult.artworkLinting}
                 peelAmount={peelAmount}
                 onPeelAmountChange={setPeelAmount}
-                onVesselArchetypeChange={(archetype) =>
-                  setAuditResult((prev) => ({
-                    ...prev,
-                    brandTwin3D: {
-                      ...prev.brandTwin3D,
-                      vesselArchetype: archetype,
-                    },
-                  }))
-                }
               />
 
               {/* Live 3D Casing Color & Finish Customizer Bar */}

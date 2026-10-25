@@ -31,7 +31,7 @@ HARDCODED REGULATORY CONSTANTS & STATUTES:
    - Evaluate whether the brand offers a purposeful, safe niche formulation (e.g., translucent silver/gray hair & maturing scalp care), communicates positively and upliftingly with consumers (no fear/shame anti-aging copy), filters claims through an authentic mission, and avoids greenwashing or illegal drug claims.
 
 5. URL AUDIT vs. DISTINCT COMPLIANT BRAND VARIANT GENERATION:
-   - If urlMode is "generate-distinct-brand", take the reference product URL or input formulation and synthesize a SIMILAR-BUT-DISTINCT, 100% COMPLIANT brand concept: create an original brandName, productTitle, 3D vessel configuration, positive mission-aligned claims, and replace any [VIOLATION] ingredients (such as Red 28 in eye palettes or PTFE in primers) with safe, globally compliant substitutes (such as Carmine/Manganese Violet/Synthetic Fluorphlogopite or Boron Nitride/Caprylyl Methicone) so every row in matrixRows achieves [PASS] across US FDA, California, and the EU.`;
+   - If urlMode is "generate-distinct-brand", take the reference product URL or input formulation and synthesize a SIMILAR-BUT-DISTINCT, 100% COMPLIANT brand concept: create an original, unique, poetic brandName that NEVER starts with "Maison" (e.g., use distinctive modern luxury names like "SÉRÉNITÉ BOTANIQUE", "VELOURS D’AURORE", "NACRE & PÉTALE", "OPALINE STUDIO", "CÉLESTE LABORATORY", "SOLSTICE FLORA", "VESPERA BEAUTÉ", or a creative name tailored to the input keywords), a distinctive productTitle, a bespoke Argon 3D vessel configuration (procedural3DModel), positive mission-aligned claims, and replace any [VIOLATION] ingredients (such as Red 28 in eye palettes or PTFE in primers) with safe, globally compliant substitutes (such as Carmine/Manganese Violet/Synthetic Fluorphlogopite or Boron Nitride/Caprylyl Methicone) so every row in matrixRows achieves [PASS] across US FDA, California, and the EU.`;
 
 const jurisdictionVerdictSchema = {
   type: Type.OBJECT,
@@ -87,6 +87,84 @@ const complianceResponseSchema = {
           items: { type: Type.STRING },
         },
         videoIngestionSummary: { type: Type.STRING },
+        procedural3DModel: {
+          type: Type.OBJECT,
+          properties: {
+            generatedByModel: { type: Type.STRING },
+            modelTitle: { type: Type.STRING },
+            architecturalNotes: { type: Type.STRING },
+            silhouetteFamily: { type: Type.STRING },
+            latheProfilePoints: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  r: { type: Type.NUMBER },
+                  y: { type: Type.NUMBER },
+                },
+                required: ['r', 'y'],
+              },
+            },
+            latheSegments: { type: Type.NUMBER },
+            latheMaterialType: { type: Type.STRING },
+            latheColorHex: { type: Type.STRING },
+            customPrimitives: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  partName: { type: Type.STRING },
+                  geometryType: { type: Type.STRING },
+                  dimensions: {
+                    type: Type.ARRAY,
+                    items: { type: Type.NUMBER },
+                  },
+                  radialSegments: { type: Type.NUMBER },
+                  position: {
+                    type: Type.ARRAY,
+                    items: { type: Type.NUMBER },
+                  },
+                  rotation: {
+                    type: Type.ARRAY,
+                    items: { type: Type.NUMBER },
+                  },
+                  scale: {
+                    type: Type.ARRAY,
+                    items: { type: Type.NUMBER },
+                  },
+                  materialType: { type: Type.STRING },
+                  colorHex: { type: Type.STRING },
+                  roughness: { type: Type.NUMBER },
+                  metalness: { type: Type.NUMBER },
+                  transmission: { type: Type.NUMBER },
+                },
+                required: [
+                  'partName',
+                  'geometryType',
+                  'dimensions',
+                  'position',
+                  'materialType',
+                  'colorHex',
+                ],
+              },
+            },
+            frontPlaquePosition: {
+              type: Type.ARRAY,
+              items: { type: Type.NUMBER },
+            },
+            backPlaquePosition: {
+              type: Type.ARRAY,
+              items: { type: Type.NUMBER },
+            },
+          },
+          required: [
+            'generatedByModel',
+            'modelTitle',
+            'architecturalNotes',
+            'silhouetteFamily',
+            'customPrimitives',
+          ],
+        },
       },
       required: [
         'vesselArchetype',
@@ -106,6 +184,7 @@ const complianceResponseSchema = {
         'peelOffOuterGraphicTitle',
         'peelOffBuriedWarningText',
         'frontPanelClaims',
+        'procedural3DModel',
       ],
     },
     urlRemixMetadata: {
@@ -412,7 +491,7 @@ ${
   body.urlMode === 'generate-distinct-brand'
     ? `CRITICAL INSTRUCTION FOR "generate-distinct-brand" MODE:
 The user wants to create a SIMILAR-BUT-DISTINCT, 100% COMPLIANT brand and formulation inspired by "${body.sourceProductUrl || body.productName}".
-1. Create a fresh, legally distinct brandName and productTitle (e.g., if inspired by a neon eye palette or PTFE primer, create an elevated clean-beauty brand).
+1. Create a fresh, legally distinct, unique brandName and productTitle inspired by the specific product/URL keywords. Do NOT start brandName with "Maison" — invent a unique, memorable feminine luxury brand name each time.
 2. Replace every non-compliant or high-risk ingredient (such as D&C Red No. 28 in eye area, PTFE, Perfluorononyl Dimethicone, MIT, or unbuffered Thioglycolic Acid) with safe, globally compliant substitutes (such as Carmine CI 75470, Manganese Violet CI 77742, Synthetic Fluorphlogopite, Boron Nitride, Caprylyl Methicone, or Acid Violet 43 at 1,200 ppm) and list all substitutions in urlRemixMetadata.substitutedIngredients.
 3. Ensure the resulting matrixRows and artworkLinting achieve "PASS" across US FDA, California, and the EU, with zero peel-off warning traps and positive, uplifting Silvering-aligned claims.`
     : ''
