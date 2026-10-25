@@ -3,17 +3,17 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const alertVariants = cva(
-  'relative w-full rounded-xl border p-4 text-sm transition-colors',
+  'relative w-full rounded-2xl border p-4 text-sm transition-colors',
   {
     variants: {
       variant: {
-        default: 'bg-slate-900 border-slate-800 text-slate-100',
+        default: 'bg-[#FAF6F3] border-[#EADCD7] text-[#281E1C]',
         destructive:
-          'border-rose-500/50 bg-rose-950/30 text-rose-100',
+          'border-[#FECDD3] bg-[#FFF1F2] text-[#881337]',
         emerald:
-          'border-emerald-500/40 bg-emerald-950/25 text-emerald-100',
+          'border-[#A7F3D0] bg-[#ECFDF5] text-[#064E3B]',
         warning:
-          'border-amber-500/40 bg-amber-950/25 text-amber-100',
+          'border-[#FDE68A] bg-[#FFFBEB] text-[#78350F]',
       },
     },
     defaultVariants: {
@@ -41,8 +41,8 @@ const AlertTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn('mb-1 font-semibold leading-snug tracking-tight text-sm', className)}
-    style={{ fontFamily: 'var(--font-display), sans-serif' }}
+    className={cn('mb-1 font-semibold leading-snug tracking-tight text-base', className)}
+    style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
     {...props}
   />
 ));

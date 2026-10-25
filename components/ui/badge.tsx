@@ -3,20 +3,20 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center whitespace-nowrap shrink-0 rounded-md px-2 py-0.5 text-xs font-mono font-semibold transition-colors focus:outline-none',
+  'inline-flex items-center whitespace-nowrap shrink-0 rounded-full px-2.5 py-0.5 text-[10px] tracking-widest uppercase font-semibold transition-colors focus:outline-none',
   {
     variants: {
       variant: {
         default:
-          'border border-slate-700 bg-slate-800 text-slate-200',
+          'border border-[#E4D3CD] bg-[#F7EFEA] text-[#5C4A47]',
         pass:
-          'border border-emerald-500/60 bg-emerald-950/60 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.2)]',
+          'border border-[#A7F3D0] bg-[#ECFDF5] text-[#065F46]',
         violation:
-          'border border-rose-500/70 bg-rose-950/70 text-rose-300 shadow-[0_0_14px_rgba(244,63,94,0.28)]',
+          'border border-[#FECDD3] bg-[#FFF1F2] text-[#9F1239]',
         warning:
-          'border border-amber-500/60 bg-amber-950/60 text-amber-300',
+          'border border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]',
         outline:
-          'border border-slate-700 text-slate-300 bg-transparent',
+          'border border-[#D8B4A6] text-[#8E5B65] bg-white',
       },
     },
     defaultVariants: {

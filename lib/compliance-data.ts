@@ -530,10 +530,10 @@ export const DETERMINISTIC_PRESET_RESULTS: Record<string, ComplianceAuditResult>
       subtitle: '9-Pan Neon Pressed Pigment Compact',
       batchCode: 'BATCH #HM-2026-99X',
       netWeightLabel: '9 x 1.3g / 0.39 oz.',
-      primaryColorHex: '#0F172A',
-      secondaryColorHex: '#1E293B',
-      accentColorHex: '#F43F5E',
-      pigmentOrLiquidHex: '#FF1493',
+      primaryColorHex: '#F9E4E8',
+      secondaryColorHex: '#F2CED5',
+      accentColorHex: '#C86D7E',
+      pigmentOrLiquidHex: '#E11D48',
       palettePanColorsHex: [
         '#FF1493',
         '#FF007F',
@@ -545,7 +545,7 @@ export const DETERMINISTIC_PRESET_RESULTS: Record<string, ComplianceAuditResult>
         '#7C3AED',
         '#E11D48',
       ],
-      metallicFinish: 'obsidian',
+      metallicFinish: 'gold',
       glassTransmission: 0.15,
       hasPeelOffStickerTrap: true,
       peelOffOuterGraphicTitle: 'PEEL HERE FOR MULTILINGUAL INGREDIENTS & ARTISTRY GUIDE',
@@ -821,11 +821,11 @@ Furthermore, multimodal packaging inspection detected that the exclusion warning
       subtitle: '16-Hour Velvet Complexion Base',
       batchCode: 'BATCH #PS-2026-104CA',
       netWeightLabel: '30 mL / 1.01 fl. oz.',
-      primaryColorHex: '#132A24',
-      secondaryColorHex: '#1E293B',
-      accentColorHex: '#F59E0B',
-      pigmentOrLiquidHex: '#E2E8F0',
-      palettePanColorsHex: ['#E2E8F0'],
+      primaryColorHex: '#FAF0EA',
+      secondaryColorHex: '#EEDAD0',
+      accentColorHex: '#C59B6D',
+      pigmentOrLiquidHex: '#F5E1D8',
+      palettePanColorsHex: ['#F5E1D8', '#E5C19A', '#D8A28C'],
       metallicFinish: 'gold',
       glassTransmission: 0.25,
       hasPeelOffStickerTrap: false,
@@ -1087,12 +1087,12 @@ While Polytetrafluoroethylene (**PTFE at 1,000 ppm / 0.1%**) passes legacy feder
       subtitle: 'Batch #OC-2026-884B (Quarantined)',
       batchCode: 'BATCH #OC-2026-884B',
       netWeightLabel: '15 mL / 0.50 fl. oz.',
-      primaryColorHex: '#18181B',
-      secondaryColorHex: '#27272A',
-      accentColorHex: '#F43F5E',
+      primaryColorHex: '#FBE8EB',
+      secondaryColorHex: '#F0CFD5',
+      accentColorHex: '#E11D48',
       pigmentOrLiquidHex: '#FB7185',
-      palettePanColorsHex: ['#FB7185'],
-      metallicFinish: 'obsidian',
+      palettePanColorsHex: ['#FB7185', '#F43F5E'],
+      metallicFinish: 'gold',
       glassTransmission: 0.65,
       hasPeelOffStickerTrap: true,
       peelOffOuterGraphicTitle: 'PEEL FOR CLINICAL PATCH TEST INSTRUCTIONS',
@@ -1410,11 +1410,11 @@ Per **21 U.S.C. § 364a(c)**, the Responsible Person must submit any new and mat
       subtitle: 'For Naturally Silver, Gray & White Hair',
       batchCode: 'BATCH #SLV-2026-01A',
       netWeightLabel: '50 mL / 1.69 fl. oz.',
-      primaryColorHex: '#0F172A',
-      secondaryColorHex: '#334155',
-      accentColorHex: '#10B981',
-      pigmentOrLiquidHex: '#8B5CF6',
-      palettePanColorsHex: ['#8B5CF6', '#C4B5FD', '#E2E8F0'],
+      primaryColorHex: '#F4EFFA',
+      secondaryColorHex: '#E4D8F3',
+      accentColorHex: '#9E7BB5',
+      pigmentOrLiquidHex: '#A78BFA',
+      palettePanColorsHex: ['#A78BFA', '#C4B5FD', '#EDE9FE'],
       metallicFinish: 'platinum',
       glassTransmission: 0.88,
       hasPeelOffStickerTrap: false,
@@ -1775,36 +1775,116 @@ export function synthesizeUrlBrandResult(
     };
   }
 
-  // Mode 2: Generate a Similar-But-Distinct 100% Compliant Brand Variant from ANY URL
+  // Mode 2: Generate a Similar-But-Distinct 100% Compliant Brand Variant from ANY URL or Prompt
+  const hashNum = cleanUrl
+    .split('')
+    .reduce((acc, ch, idx) => acc + ch.charCodeAt(0) * (idx + 1), 0);
+
+  const FEMININE_BRAND_THEMES = [
+    {
+      house: 'MAISON ROSERAIE PARIS',
+      suffix: 'SOIE DE PIVOINE',
+      primaryHex: '#F9E8EC',
+      secondaryHex: '#F2D2D9',
+      accentHex: '#C86D7E',
+      liquidHex: '#E88D9E',
+      finish: 'gold' as const,
+      pans: [
+        '#E3738B',
+        '#F4B2C1',
+        '#D98A9C',
+        '#F7D1D8',
+        '#C86D7E',
+        '#E6C095',
+        '#D8A7B1',
+        '#FFF5F7',
+        '#B5566A',
+      ],
+    },
+    {
+      house: 'ATELIER CÉLESTE BEAUTÉ',
+      suffix: 'VOILE DE NACRE',
+      primaryHex: '#F7EFE8',
+      secondaryHex: '#EAD8C9',
+      accentHex: '#C59B6D',
+      liquidHex: '#D8B4F8',
+      finish: 'gold' as const,
+      pans: [
+        '#D8A28C',
+        '#F1D3C2',
+        '#C78283',
+        '#E5C19A',
+        '#B88B7D',
+        '#F9ECE4',
+        '#D49B94',
+        '#E2B6CF',
+        '#9E6B66',
+      ],
+    },
+    {
+      house: 'LUMIÈRE DE CAMÉLIA',
+      suffix: 'ÉCLAT VELOURS',
+      primaryHex: '#F3ECF8',
+      secondaryHex: '#E2D4F0',
+      accentHex: '#A67DB8',
+      liquidHex: '#C4B5FD',
+      finish: 'platinum' as const,
+      pans: [
+        '#C084FC',
+        '#F472B6',
+        '#E9D5FF',
+        '#FB7185',
+        '#A78BFA',
+        '#FBCFE8',
+        '#DDD6FE',
+        '#FFF1F2',
+        '#9333EA',
+      ],
+    },
+    {
+      house: 'MAISON FLEUR D’ORANGER',
+      suffix: 'CRÈME DE CACHEMIRE',
+      primaryHex: '#FBF0EA',
+      secondaryHex: '#F2DCCF',
+      accentHex: '#D48C70',
+      liquidHex: '#FDBA8C',
+      finish: 'gold' as const,
+      pans: [
+        '#E07A5F',
+        '#F2CC8F',
+        '#E5989B',
+        '#FFB5A7',
+        '#D88C9A',
+        '#FCD5CE',
+        '#C97C5D',
+        '#F8EDEB',
+        '#B56576',
+      ],
+    },
+  ];
+
+  const chosenTheme = FEMININE_BRAND_THEMES[hashNum % FEMININE_BRAND_THEMES.length];
+
   const vesselArchetype: 'pressed-palette' | 'dropper-serum' | 'airless-pump' = isPrimerOrCream
     ? 'airless-pump'
     : isSerumOrHair
     ? 'dropper-serum'
     : 'pressed-palette';
 
-  const distinctBrandName = isSerumOrHair
-    ? 'MAISON ARGENT ATELIER'
-    : isPrimerOrCream
-    ? 'VELOURS BOTANIQUE PARIS'
-    : 'MAISON ÉCLAT COSMÉTIQUES';
-
-  const distinctProductTitle = isSerumOrHair
-    ? `${slugTitle.toUpperCase().slice(0, 22)} LUMIÈRE ELIXIR`
-    : isPrimerOrCream
-    ? `${slugTitle.toUpperCase().slice(0, 22)} SILK VEIL BASE`
-    : `${slugTitle.toUpperCase().slice(0, 22)} MINERAL COMPACT`;
+  const distinctBrandName = chosenTheme.house;
+  const distinctProductTitle = `${slugTitle.toUpperCase().slice(0, 18)} · ${chosenTheme.suffix}`;
 
   return {
-    presetId: 'distinct-remix',
+    presetId: `remix-${hashNum}`,
     auditTimestamp: new Date().toISOString(),
     modelEngine: 'models/gemini-4-argon (URL-to-Compliant Brand Remixer)',
-    productName: `${distinctBrandName} — ${slugTitle} (Compliant Brand Twin)`,
+    productName: `${distinctBrandName} — ${slugTitle} (${chosenTheme.suffix})`,
     productCategory:
       vesselArchetype === 'pressed-palette'
         ? 'Prestige Eye-Safe Mineral Pressed Compact'
         : vesselArchetype === 'airless-pump'
-        ? 'PFAS-Free Velvet Complexion Primer'
-        : 'Isohydric Hair, Scalp & Dermal Toning Elixir',
+        ? 'PFAS-Free Velvet Complexion Primer Flacon'
+        : 'Botanical Hair, Scalp & Dermal Lustre Elixir',
     overallStatus: 'PASS',
     summaryHeadline: `Distinct Compliant Brand Twin Synthesized from ${domainName}: All flagged colorants, fluoropolymers, and peel-off label traps have been reformulated into a 100% US FDA, California AB 2762, and EU EC 1223/2009 [PASS] SKU.`,
     brandTwin3D: {
@@ -1812,27 +1892,17 @@ export function synthesizeUrlBrandResult(
       brandName: distinctBrandName,
       productTitle: distinctProductTitle,
       subtitle: `Inspired by ${domainName} · 100% Global Compliance`,
-      batchCode: 'BATCH #OC-2026-REMIX',
+      batchCode: `BATCH #OC-${100 + (hashNum % 899)}-CLEAN`,
       netWeightLabel:
         vesselArchetype === 'pressed-palette'
           ? '9 x 1.4g / 0.44 oz.'
           : '30 mL / 1.01 fl. oz.',
-      primaryColorHex: '#111827',
-      secondaryColorHex: '#1F2937',
-      accentColorHex: '#10B981',
-      pigmentOrLiquidHex: isSerumOrHair ? '#A78BFA' : isPrimerOrCream ? '#FDE68A' : '#F472B6',
-      palettePanColorsHex: [
-        '#E11D48',
-        '#C084FC',
-        '#F472B6',
-        '#FB7185',
-        '#A78BFA',
-        '#FBBF24',
-        '#34D399',
-        '#E2E8F0',
-        '#9333EA',
-      ],
-      metallicFinish: isPrimerOrCream ? 'gold' : 'platinum',
+      primaryColorHex: chosenTheme.primaryHex,
+      secondaryColorHex: chosenTheme.secondaryHex,
+      accentColorHex: chosenTheme.accentHex,
+      pigmentOrLiquidHex: chosenTheme.liquidHex,
+      palettePanColorsHex: chosenTheme.pans,
+      metallicFinish: chosenTheme.finish,
       glassTransmission: 0.85,
       hasPeelOffStickerTrap: false,
       peelOffOuterGraphicTitle: 'DIRECT-PRINTED 7.5 PT COMPLIANCE PANEL (21 CFR 701.2 PASS)',
@@ -1849,10 +1919,10 @@ export function synthesizeUrlBrandResult(
       originalBrandSummary: `Analyzed reference product URL (${cleanUrl}) from ${domainName} and identified cross-border chemical and labeling bottlenecks.`,
       differentiationStrategy: `Created "${distinctBrandName}" with bespoke ${
         vesselArchetype === 'pressed-palette'
-          ? 'brushed platinum compact packaging'
+          ? 'blush-porcelain & champagne-gold compact mirror packaging'
           : vesselArchetype === 'airless-pump'
-          ? 'satin champagne-gold airless pump packaging'
-          : 'frosted optical-glass dropper packaging'
+          ? 'silk-ivory & rose-gold airless primer flacon'
+          : 'frosted rose-quartz glass dropper bottle'
       }, replacing restricted pigments, PFAS slip polymers, and sensitizing preservatives with clean, globally legal actives.`,
       substitutedIngredients: [
         {

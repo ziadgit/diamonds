@@ -17,7 +17,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs data-[state=open]:animate-in data-[state=closed]:animate-out',
+      'fixed inset-0 z-50 bg-[#281E1C]/40 backdrop-blur-xs data-[state=open]:animate-in data-[state=closed]:animate-out',
       className
     )}
     {...props}
@@ -34,13 +34,13 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-[50%] top-[50%] z-50 grid w-full max-w-4xl translate-x-[-50%] translate-y-[-50%] gap-4 border border-slate-800 bg-slate-900 p-6 shadow-2xl rounded-xl max-h-[88vh] overflow-y-auto text-slate-50',
+        'fixed left-[50%] top-[50%] z-50 grid w-full max-w-4xl translate-x-[-50%] translate-y-[-50%] gap-4 border border-[#EADCD7] bg-white p-6 shadow-2xl rounded-3xl max-h-[88vh] overflow-y-auto text-[#281E1C]',
         className
       )}
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none cursor-pointer">
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-2 text-[#786662] hover:bg-[#F5EBE8] hover:text-[#281E1C] focus:outline-none cursor-pointer">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
@@ -60,12 +60,12 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('text-lg font-semibold leading-none tracking-tight text-slate-50', className)}
-    style={{ fontFamily: 'var(--font-display), sans-serif' }}
+    className={cn('text-xl font-semibold leading-none tracking-tight text-[#281E1C]', className)}
+    style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
     {...props}
   />
 ));
-DialogTitle.displayName = DialogPrimitive.Title.displayName;
+DialogTitle.displayName = 'DialogTitle';
 
 const DialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
@@ -73,7 +73,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn('text-xs text-slate-400', className)}
+    className={cn('text-xs text-[#786662]', className)}
     {...props}
   />
 ));

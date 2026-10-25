@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import {
-  Playfair_Display,
+  Cormorant_Garamond,
   Plus_Jakarta_Sans,
   JetBrains_Mono,
 } from 'next/font/google';
 import './globals.css';
 
-const playfair = Playfair_Display({
+const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
-  weight: ['500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
   variable: '--font-serif',
 });
 
@@ -25,20 +26,20 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'OpenCompact — Prestige Beauty Formulation & Regulatory Atelier',
+  title: 'OpenCompact — Prestige Beauty Formulation & 3D Brand Notebook',
   description:
-    'The prestige cosmetic formulation, 3D packaging studio, and global regulatory compliance maison powered by Gemini 4 Argon. Built for modern beauty founders and brands.',
+    'The minimalist beauty brand notebook, live 3D packaging studio, and global cosmetic compliance atelier powered by Gemini 4 Argon.',
   openGraph: {
-    title: 'OpenCompact — Prestige Beauty Formulation & Regulatory Atelier',
+    title: 'OpenCompact — Prestige Beauty Formulation & 3D Brand Notebook',
     description:
-      'The prestige cosmetic formulation, 3D packaging studio, and global regulatory compliance maison powered by Gemini 4 Argon.',
+      'The minimalist beauty brand notebook, live 3D packaging studio, and global cosmetic compliance atelier powered by Gemini 4 Argon.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'OpenCompact — Prestige Beauty Formulation & Regulatory Atelier',
+    title: 'OpenCompact — Prestige Beauty Formulation & 3D Brand Notebook',
     description:
-      'The prestige cosmetic formulation, 3D packaging studio, and global regulatory compliance maison powered by Gemini 4 Argon.',
+      'The minimalist beauty brand notebook, live 3D packaging studio, and global cosmetic compliance atelier powered by Gemini 4 Argon.',
   },
 };
 
@@ -46,11 +47,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${playfair.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} dark`}
+      className={`${cormorant.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`}
     >
       <body
         suppressHydrationWarning
-        className="min-h-screen bg-slate-950 text-slate-50 antialiased selection:bg-emerald-500/30 selection:text-emerald-200"
+        className="min-h-screen bg-[#FAF6F3] text-[#281E1C] antialiased selection:bg-[#F3D7DC] selection:text-[#692332]"
         style={{ fontFamily: 'var(--font-sans), sans-serif' }}
       >
         {children}

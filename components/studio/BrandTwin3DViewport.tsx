@@ -24,66 +24,72 @@ function createFrontLabelTexture(
   canvas.height = 1024;
   const ctx = canvas.getContext('2d')!;
 
-  // Background
-  ctx.fillStyle = spec.primaryColorHex || '#0F172A';
+  // Soft Silk Porcelain / Custom Brand Background
+  ctx.fillStyle = '#FFFDFB';
   ctx.fillRect(0, 0, 1024, 1024);
 
-  // Subtle metallic frame border
-  ctx.strokeStyle = spec.accentColorHex || '#10B981';
-  ctx.lineWidth = 14;
-  ctx.strokeRect(44, 44, 936, 936);
+  // Subtle pastel tint wash from brand primary color
+  ctx.fillStyle = spec.primaryColorHex || '#F9E8EC';
+  ctx.globalAlpha = 0.28;
+  ctx.fillRect(0, 0, 1024, 1024);
+  ctx.globalAlpha = 1.0;
 
-  ctx.strokeStyle = 'rgba(248, 250, 252, 0.22)';
+  // Double Couture Rose-Gold Frame Border
+  ctx.strokeStyle = spec.accentColorHex || '#C86D7E';
+  ctx.lineWidth = 12;
+  ctx.strokeRect(48, 48, 928, 928);
+
+  ctx.strokeStyle = '#D8B4A6';
   ctx.lineWidth = 3;
-  ctx.strokeRect(68, 68, 888, 888);
+  ctx.strokeRect(72, 72, 880, 880);
 
-  // Brand Header
-  ctx.fillStyle = '#94A3B8';
-  ctx.font = '600 34px sans-serif';
+  // Maison Header
+  ctx.fillStyle = '#8E5B65';
+  ctx.font = '600 32px Georgia, serif';
   ctx.textAlign = 'center';
-  ctx.fillText((spec.brandName || 'OPENCOMPACT LABS').toUpperCase(), 512, 165);
+  ctx.fillText((spec.brandName || 'MAISON OPENCOMPACT').toUpperCase(), 512, 175);
 
-  // Divider line
-  ctx.fillStyle = spec.accentColorHex || '#10B981';
-  ctx.fillRect(362, 195, 300, 5);
+  // Delicate Rose-Gold Ornamental Divider
+  ctx.fillStyle = spec.accentColorHex || '#C86D7E';
+  ctx.fillRect(382, 205, 260, 4);
 
-  // Product Title
-  ctx.fillStyle = '#F8FAFC';
-  ctx.font = '700 58px sans-serif';
-  const titleWords = (spec.productTitle || 'COMPLIANCE TWIN').split(' ');
+  // Product Title in Editorial Serif
+  ctx.fillStyle = '#281E1C';
+  ctx.font = '700 54px Georgia, serif';
+  const titleWords = (spec.productTitle || 'SOIE DE PIVOINE').split(' ');
   const line1 = titleWords.slice(0, 2).join(' ');
   const line2 = titleWords.slice(2).join(' ');
-  ctx.fillText(line1, 512, 290);
+  ctx.fillText(line1, 512, 295);
   if (line2) {
-    ctx.fillText(line2, 512, 360);
+    ctx.fillText(line2, 512, 362);
   }
 
   // Subtitle
-  ctx.fillStyle = '#CBD5E1';
-  ctx.font = '500 30px sans-serif';
-  ctx.fillText(spec.subtitle || 'Multi-Jurisdictional Evaluated Vessel', 512, 430);
+  ctx.fillStyle = '#786662';
+  ctx.font = 'italic 30px Georgia, serif';
+  ctx.fillText(spec.subtitle || 'Haute Formulation · Paris & New York', 512, 430);
 
-  // Claims box
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-  ctx.fillRect(110, 490, 804, 240);
-  ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(110, 490, 804, 240);
+  // Claims Cartouche Box
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+  ctx.fillRect(110, 490, 804, 235);
+  ctx.strokeStyle = '#E4D3CD';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(110, 490, 804, 235);
 
   const claims = spec.frontPanelClaims?.length
     ? spec.frontPanelClaims
-    : ['CLINICALLY EVALUATED FORMULATION', 'AUDITED BY OPENCOMPACT ENGINE'];
+    : ['CLINICALLY EVALUATED CLEAN FORMULATION', 'VERIFIED BY OPENCOMPACT ATELIER'];
 
-  ctx.fillStyle = '#F8FAFC';
-  ctx.font = '600 28px sans-serif';
+  ctx.fillStyle = '#3D2E2B';
+  ctx.font = '600 26px sans-serif';
   claims.slice(0, 2).forEach((claim, idx) => {
     const truncated = claim.length > 44 ? claim.slice(0, 44) + '...' : claim;
-    ctx.fillText(truncated, 512, 575 + idx * 72);
+    ctx.fillText(truncated, 512, 575 + idx * 68);
   });
 
   // Batch & Net Weight Footer
-  ctx.fillStyle = '#94A3B8';
-  ctx.font = '600 28px monospace';
+  ctx.fillStyle = '#8E5B65';
+  ctx.font = '600 26px monospace';
   ctx.fillText(`${spec.batchCode}  ·  ${spec.netWeightLabel}`, 512, 860);
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -105,30 +111,30 @@ function createBackUnderneathWarningTexture(
 
   const isViolation = linting.overallArtworkStatus === 'VIOLATION' || spec.hasPeelOffStickerTrap;
 
-  ctx.fillStyle = isViolation ? '#2A0A14' : '#06241B';
+  ctx.fillStyle = isViolation ? '#FFF1F2' : '#F2FBF7';
   ctx.fillRect(0, 0, 1024, 1024);
 
-  ctx.strokeStyle = isViolation ? '#F43F5E' : '#10B981';
-  ctx.lineWidth = 16;
+  ctx.strokeStyle = isViolation ? '#E11D48' : '#10B981';
+  ctx.lineWidth = 14;
   ctx.strokeRect(36, 36, 952, 952);
 
   // Header badge
-  ctx.fillStyle = isViolation ? '#F43F5E' : '#10B981';
-  ctx.fillRect(80, 80, 864, 96);
-  ctx.fillStyle = '#090D16';
-  ctx.font = '700 34px monospace';
+  ctx.fillStyle = isViolation ? '#BE123C' : '#059669';
+  ctx.fillRect(80, 80, 864, 92);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 32px sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(
     isViolation
       ? 'BURIED LAYER REVEALED — 21 CFR 701.2 VIOLATION'
       : 'PRIMARY COMPLIANCE PANEL — 21 CFR 701.2 PASS',
     512,
-    140
+    138
   );
 
   // Warning text block
-  ctx.fillStyle = '#F8FAFC';
-  ctx.font = '700 36px sans-serif';
+  ctx.fillStyle = '#281E1C';
+  ctx.font = '700 34px Georgia, serif';
   const warningStr =
     spec.peelOffBuriedWarningText ||
     linting.buriedPeelOffWarningText ||
@@ -136,13 +142,13 @@ function createBackUnderneathWarningTexture(
 
   const words = warningStr.split(' ');
   let line = '';
-  let y = 280;
+  let y = 275;
   for (let i = 0; i < words.length; i++) {
     const testLine = line + words[i] + ' ';
     if (testLine.length > 34 && i > 0) {
       ctx.fillText(line.trim(), 512, y);
       line = words[i] + ' ';
-      y += 54;
+      y += 52;
     } else {
       line = testLine;
     }
@@ -150,15 +156,15 @@ function createBackUnderneathWarningTexture(
   ctx.fillText(line.trim(), 512, y);
 
   // Telemetry readout box
-  ctx.fillStyle = 'rgba(9, 13, 22, 0.85)';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(80, 560, 864, 340);
-  ctx.strokeStyle = isViolation ? '#F43F5E' : '#10B981';
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = isViolation ? '#FECDD3' : '#A7F3D0';
+  ctx.lineWidth = 4;
   ctx.strokeRect(80, 560, 864, 340);
 
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#E2E8F0';
-  ctx.font = '600 30px monospace';
+  ctx.fillStyle = '#3D2E2B';
+  ctx.font = '600 28px monospace';
   ctx.fillText(
     `FONT SIZE: ${linting.warningFontSizePt} pt (Statutory Min: ${linting.requiredMinFontSizePt} pt)`,
     120,
@@ -174,7 +180,7 @@ function createBackUnderneathWarningTexture(
     120,
     775
   );
-  ctx.fillStyle = isViolation ? '#FDA4AF' : '#6EE7B7';
+  ctx.fillStyle = isViolation ? '#BE123C' : '#047857';
   ctx.fillText(`LOT ID:    ${spec.batchCode}`, 120, 845);
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -193,15 +199,15 @@ function createPeelOffOuterStickerTexture(
   canvas.height = 1024;
   const ctx = canvas.getContext('2d')!;
 
-  ctx.fillStyle = '#1E293B';
+  ctx.fillStyle = '#FAF3F0';
   ctx.fillRect(0, 0, 1024, 1024);
 
-  ctx.strokeStyle = '#64748B';
+  ctx.strokeStyle = '#D8B4A6';
   ctx.lineWidth = 10;
   ctx.strokeRect(30, 30, 964, 964);
 
   // Corner peel indicator
-  ctx.fillStyle = spec.accentColorHex || '#F43F5E';
+  ctx.fillStyle = '#C86D7E';
   ctx.beginPath();
   ctx.moveTo(760, 30);
   ctx.lineTo(994, 30);
@@ -209,34 +215,37 @@ function createPeelOffOuterStickerTexture(
   ctx.closePath();
   ctx.fill();
 
-  ctx.fillStyle = '#F8FAFC';
-  ctx.font = '700 28px monospace';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 26px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('PEEL  corner ↗', 860, 100);
+  ctx.fillText('PEEL CORNER ↗', 865, 100);
 
-  ctx.fillStyle = '#F8FAFC';
-  ctx.font = '700 40px sans-serif';
-  ctx.fillText('OUTER ADHESIVE GRAPHIC LAYER', 512, 240);
+  ctx.fillStyle = '#281E1C';
+  ctx.font = '700 38px Georgia, serif';
+  ctx.fillText('OUTER ADHESIVE LABEL LAYER', 512, 240);
 
-  ctx.fillStyle = '#94A3B8';
-  ctx.font = '500 30px sans-serif';
+  ctx.fillStyle = '#8E5B65';
+  ctx.font = 'italic 28px Georgia, serif';
   const title = spec.peelOffOuterGraphicTitle || 'PEEL HERE FOR MULTILINGUAL SAFETY & INCI';
   ctx.fillText(title.slice(0, 42), 512, 320);
 
   // Decorative barcode & marketing filler covering the warning underneath
-  ctx.fillStyle = '#0F172A';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(120, 400, 784, 220);
-  ctx.fillStyle = '#CBD5E1';
-  ctx.font = '500 26px monospace';
-  ctx.fillText('DIST. BY ' + (spec.brandName || 'OPENCOMPACT'), 512, 475);
-  ctx.fillText('MADE IN USA / EU · 12M PAO · RECYCLABLE VESSEL', 512, 540);
+  ctx.strokeStyle = '#EADCD7';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(120, 400, 784, 220);
+  ctx.fillStyle = '#5C4A47';
+  ctx.font = '500 25px monospace';
+  ctx.fillText('DIST. BY ' + (spec.brandName || 'MAISON OPENCOMPACT'), 512, 475);
+  ctx.fillText('PARIS · NEW YORK · 12M PAO · RECYCLABLE VESSEL', 512, 540);
 
   // Simulated barcode bars
-  ctx.fillStyle = '#F8FAFC';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(280, 680, 464, 160);
-  ctx.fillStyle = '#090D16';
+  ctx.fillStyle = '#281E1C';
   for (let x = 305; x < 720; x += 18) {
-    const w = (x % 36 === 0) ? 10 : 5;
+    const w = x % 36 === 0 ? 10 : 5;
     ctx.fillRect(x, 700, w, 120);
   }
 
@@ -307,8 +316,8 @@ export function BrandTwin3DViewport({
     const height = container.clientHeight || 460;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#090D16');
-    scene.fog = new THREE.FogExp2('#090D16', 0.045);
+    scene.background = new THREE.Color('#F7EFEA');
+    scene.fog = new THREE.FogExp2('#F7EFEA', 0.035);
 
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
     camera.position.set(0, 0.65, 4.5);
@@ -321,7 +330,7 @@ export function BrandTwin3DViewport({
     renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.12;
     renderer.shadowMap.enabled = !isSoftwareGl;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -334,11 +343,11 @@ export function BrandTwin3DViewport({
     scene.environment = envTexture;
     pmremGenerator.dispose();
 
-    // 3-Point Warm/Cool Studio Lighting
-    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x0f172a, 0.85);
+    // Sunlit Parisian Vanity Studio Lighting
+    const hemiLight = new THREE.HemisphereLight(0xfffcf9, 0xeadcd7, 1.05);
     scene.add(hemiLight);
 
-    const keyLight = new THREE.DirectionalLight(0xfff7ed, 2.2);
+    const keyLight = new THREE.DirectionalLight(0xfff7ed, 2.0);
     keyLight.position.set(4, 6, 5);
     if (!isSoftwareGl) {
       keyLight.castShadow = true;
@@ -347,17 +356,17 @@ export function BrandTwin3DViewport({
     }
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(0x34d399, 1.35);
+    const rimLight = new THREE.DirectionalLight(0xf4b2c1, 1.25);
     rimLight.position.set(-4, 3, -5);
     scene.add(rimLight);
 
-    // Contact Shadow Grounding Pedestal
+    // Warm Porcelain Travertine Vanity Pedestal
     const pedestalGroup = new THREE.Group();
     const pedestalGeo = new THREE.CylinderGeometry(2.1, 2.25, 0.14, 48);
     const pedestalMat = new THREE.MeshStandardMaterial({
-      color: 0x0f172a,
-      roughness: 0.35,
-      metalness: 0.6,
+      color: 0xfffdfb,
+      roughness: 0.28,
+      metalness: 0.15,
     });
     const pedestalMesh = new THREE.Mesh(pedestalGeo, pedestalMat);
     pedestalMesh.position.y = -1.42;
@@ -366,7 +375,7 @@ export function BrandTwin3DViewport({
 
     const ringGeo = new THREE.RingGeometry(1.92, 1.98, 64);
     const ringMat = new THREE.MeshBasicMaterial({
-      color: linting.overallArtworkStatus === 'VIOLATION' ? 0xf43f5e : 0x10b981,
+      color: linting.overallArtworkStatus === 'VIOLATION' ? 0xe11d48 : 0xd49b94,
       side: THREE.DoubleSide,
       polygonOffset: true,
       polygonOffsetFactor: -1,
@@ -384,26 +393,26 @@ export function BrandTwin3DViewport({
     const backUnderTex = createBackUnderneathWarningTexture(spec, linting, maxAnisotropy);
     const peelOuterTex = createPeelOffOuterStickerTexture(spec, maxAnisotropy);
 
-    // Metallic finish helper
+    // Metallic finish helper (Rose-Gold / Champagne Gold / Platinum)
     const metalColor =
       spec.metallicFinish === 'gold'
-        ? 0xfbbf24
+        ? 0xe6b99c
         : spec.metallicFinish === 'platinum'
-        ? 0xe2e8f0
-        : 0x334155;
+        ? 0xede6e3
+        : 0xd49b94;
 
     const metalMat = new THREE.MeshPhysicalMaterial({
       color: metalColor,
-      metalness: 0.94,
-      roughness: 0.18,
+      metalness: 0.88,
+      roughness: 0.16,
       anisotropy: 0.75,
-      clearcoat: 0.6,
+      clearcoat: 0.65,
     });
 
     const bodyPrimaryMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(spec.primaryColorHex || '#0F172A'),
-      roughness: 0.42,
-      metalness: 0.25,
+      color: new THREE.Color(spec.primaryColorHex || '#F9E8EC'),
+      roughness: 0.3,
+      metalness: 0.12,
     });
 
     // Root Product Composite Group (5-11 distinct parts)
@@ -829,23 +838,26 @@ export function BrandTwin3DViewport({
   }, [spec, linting]);
 
   return (
-    <div className="relative w-full h-[480px] rounded-xl border border-slate-800 bg-slate-950 overflow-hidden select-none">
-      {/* Top-Left Minimal Spec Header Overlay (Zero Center Occlusion) */}
-      <div className="absolute top-3 left-3 z-10 pointer-events-none flex flex-col gap-0.5 bg-slate-900/95 border border-slate-800 rounded-lg px-3 py-2">
-        <div className="text-xs font-semibold text-slate-100 tracking-tight">
+    <div className="relative w-full h-[460px] rounded-3xl border border-[#EADCD7] bg-[#F7EFEA] overflow-hidden select-none shadow-[0_12px_40px_rgba(140,105,100,0.10)]">
+      {/* Top-Left Minimal Spec Header Overlay */}
+      <div className="absolute top-3.5 left-3.5 z-10 pointer-events-none flex flex-col gap-0.5 bg-white/90 backdrop-blur-md border border-[#EADCD7] rounded-2xl px-4 py-2 shadow-sm">
+        <div
+          className="text-base font-semibold text-[#281E1C] tracking-wide"
+          style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
+        >
           {spec.brandName} — {spec.productTitle}
         </div>
-        <div className="text-[11px] font-mono text-slate-400 tabular-nums">
-          {spec.vesselArchetype.toUpperCase()} · {spec.batchCode} · PEEL LAYER: {peelAmount}%
+        <div className="text-[10px] tracking-[0.18em] uppercase text-[#9E6B74] tabular-nums">
+          3D {spec.vesselArchetype.replace('-', ' ')} · {spec.batchCode} · Peel Layer: {peelAmount}%
         </div>
       </div>
 
       {/* Dedicated Isolated WebGL Canvas Mount */}
       <div ref={canvasMountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
-      {/* Unified Collapsible Bottom Control Dock (Zero Side-Panel Clutter) */}
+      {/* Unified Collapsible Bottom Control Dock */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 bottom-3 z-10 w-[94%] max-w-[760px] transition-transform duration-200"
+        className="absolute left-1/2 -translate-x-1/2 bottom-3 z-10 w-[94%] max-w-[780px] transition-transform duration-200"
         style={{
           transform: dockCollapsed
             ? 'translate(-50%, calc(100% - 32px))'
@@ -856,34 +868,34 @@ export function BrandTwin3DViewport({
           <button
             type="button"
             onClick={() => setDockCollapsed((prev) => !prev)}
-            className="inline-flex items-center gap-1.5 rounded-t-lg border border-b-0 border-slate-700 bg-slate-900 px-3 py-1 text-[11px] font-medium text-slate-300 hover:text-white cursor-pointer whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-t-2xl border border-b-0 border-[#EADCD7] bg-white/95 px-4 py-1 text-[10px] tracking-widest uppercase font-semibold text-[#8E5B65] hover:text-[#281E1C] cursor-pointer whitespace-nowrap shrink-0"
           >
             {dockCollapsed ? (
               <>
-                <ChevronUp className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Show 3D Inspector Dock</span>
+                <ChevronUp className="h-3.5 w-3.5 text-[#B85D6F]" />
+                <span>Show 3D Mockup Controls</span>
               </>
             ) : (
               <>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                <ChevronDown className="h-3.5 w-3.5 text-[#8E5B65]" />
                 <span>Hide Controls</span>
               </>
             )}
           </button>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 shadow-2xl flex flex-col gap-2.5">
+        <div className="rounded-2xl border border-[#EADCD7] bg-white/95 backdrop-blur-md px-4 py-3 shadow-xl flex flex-col gap-2.5">
           {/* Row 1: Interactive 3D Peel-Off Label Slider */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-rose-400 shrink-0" />
+              <Layers className="h-4 w-4 text-[#B85D6F] shrink-0" />
               <label
                 htmlFor="peel-slider-3d"
-                className="text-xs font-semibold text-slate-200 whitespace-nowrap shrink-0"
+                className="text-xs font-medium text-[#281E1C] whitespace-nowrap shrink-0"
               >
-                Interactive 3D Peel-Off Label Inspector:
+                3D Peel-Off Label Inspector:
               </label>
-              <span className="text-xs font-mono text-emerald-400 tabular-nums">
+              <span className="text-xs font-mono text-[#B85D6F] font-semibold tabular-nums">
                 {peelAmount}% Lifted
               </span>
             </div>
@@ -902,7 +914,7 @@ export function BrandTwin3DViewport({
                     triggerCameraView('back');
                   }
                 }}
-                className="w-full accent-emerald-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
+                className="w-full accent-[#B85D6F] cursor-pointer h-1.5 bg-[#F2E4E0] rounded-lg"
               />
               <button
                 type="button"
@@ -911,28 +923,30 @@ export function BrandTwin3DViewport({
                   onPeelAmountChange(nextVal);
                   triggerCameraView('back');
                 }}
-                className="px-2.5 py-1 rounded-md text-[11px] font-medium border border-rose-500/50 bg-rose-950/50 text-rose-200 hover:bg-rose-900/60 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                className="px-3 py-1 rounded-full text-[10px] tracking-wider uppercase font-semibold border border-[#E4B8C1] bg-[#FFF1F2] text-[#9F1239] hover:bg-[#FFE4E6] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
               >
-                {peelAmount > 50 ? 'Seal Flap' : 'Peel Back Warning Flap'}
+                {peelAmount > 50 ? 'Seal Label' : 'Peel Back Warning Flap'}
               </button>
             </div>
           </div>
 
           {/* Row 2: Camera View Presets & Vessel Archetype Switcher */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/90">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#F2E6E2]">
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-slate-400 mr-1 whitespace-nowrap">Camera:</span>
+              <span className="text-[10px] tracking-wider uppercase text-[#8E5B65] mr-1 whitespace-nowrap">
+                Angle:
+              </span>
               <button
                 type="button"
                 onClick={() => triggerCameraView('front')}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                className={`px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                   cameraPreset === 'front'
-                    ? 'bg-emerald-500 text-slate-950 font-semibold'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    ? 'bg-[#B85D6F] text-white font-semibold'
+                    : 'bg-[#FAF3F0] text-[#5C4A47] hover:bg-[#F2E4E0]'
                 }`}
               >
                 <Eye className="h-3 w-3 inline mr-1" />
-                Front Claims
+                Front Face
               </button>
               <button
                 type="button"
@@ -940,48 +954,50 @@ export function BrandTwin3DViewport({
                   triggerCameraView('back');
                   if (peelAmount < 65) onPeelAmountChange(80);
                 }}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                className={`px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                   cameraPreset === 'back'
-                    ? 'bg-emerald-500 text-slate-950 font-semibold'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    ? 'bg-[#B85D6F] text-white font-semibold'
+                    : 'bg-[#FAF3F0] text-[#5C4A47] hover:bg-[#F2E4E0]'
                 }`}
               >
                 <Layers className="h-3 w-3 inline mr-1" />
-                Back Peel-Off Layer
+                Back Peel Layer
               </button>
               <button
                 type="button"
                 onClick={() => triggerCameraView('orbit')}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                className={`px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                   cameraPreset === 'orbit'
-                    ? 'bg-emerald-500 text-slate-950 font-semibold'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    ? 'bg-[#B85D6F] text-white font-semibold'
+                    : 'bg-[#FAF3F0] text-[#5C4A47] hover:bg-[#F2E4E0]'
                 }`}
               >
                 <RotateCcw className="h-3 w-3 inline mr-1" />
-                360° Turntable
+                360° Spin
               </button>
             </div>
 
             {onVesselArchetypeChange && (
               <div className="flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                <span className="text-[11px] text-slate-400 whitespace-nowrap">3D Vessel:</span>
+                <Sparkles className="h-3.5 w-3.5 text-[#B85D6F] shrink-0" />
+                <span className="text-[10px] tracking-wider uppercase text-[#8E5B65] whitespace-nowrap">
+                  3D Shape:
+                </span>
                 {(
                   [
-                    { id: 'pressed-palette', label: 'Compact Palette' },
-                    { id: 'dropper-serum', label: 'Glass Dropper' },
-                    { id: 'airless-pump', label: 'Airless Primer' },
+                    { id: 'pressed-palette', label: 'Compact Mirror' },
+                    { id: 'dropper-serum', label: 'Serum Dropper' },
+                    { id: 'airless-pump', label: 'Primer Flacon' },
                   ] as const
                 ).map((item) => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => onVesselArchetypeChange(item.id)}
-                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                    className={`px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                       spec.vesselArchetype === item.id
-                        ? 'border border-emerald-500/60 bg-emerald-950/60 text-emerald-300'
-                        : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                        ? 'border border-[#B85D6F] bg-[#FBF0F2] text-[#9E4758] font-semibold'
+                        : 'bg-[#FAF3F0] text-[#786662] hover:text-[#281E1C]'
                     }`}
                   >
                     {item.label}

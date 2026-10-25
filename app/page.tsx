@@ -1,35 +1,42 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import {
   Sparkles,
-  Star,
-  ArrowRight,
-  Check,
-  Copy,
-  Layers,
-  FileCode2,
-  Globe,
-  Play,
-  BookOpen,
-  Wand2,
-  Link2,
-  Search,
   CheckCircle2,
-  ShieldCheck,
+  XCircle,
+  ArrowRight,
+  Copy,
+  Check,
+  Search,
+  Sliders,
+  Plus,
+  BookOpen,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Compass,
+  Box,
+  Trash2,
+  Share2,
+  RefreshCw,
+  FileCheck2,
+  Palette,
+  Beaker,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableHead,
-  TableRow,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import {
   Dialog,
@@ -38,1197 +45,1436 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import {
-  ComplianceAuditResult,
-  DETERMINISTIC_PRESET_RESULTS,
-  OPENCOMPACT_README_MD,
-  SAMPLE_PRODUCT_URLS,
-  SILVERING_FIVE_PILLARS,
-  synthesizeUrlBrandResult,
-} from '@/lib/compliance-data';
+import { OpenCompactLogo } from '@/components/ui/opencompact-logo';
 import { ComplianceStudioWorkspace } from '@/components/studio/ComplianceStudioWorkspace';
+import {
+  SAMPLE_PRODUCT_URLS,
+  ComplianceAuditResult,
+  BrandTwin3DSpec,
+  synthesizeUrlBrandResult,
+  OPENCOMPACT_README_MD,
+  SILVERING_FIVE_PILLARS,
+} from '@/lib/compliance-data';
 
-const SANDBOX_RAW_SAMPLES: Record<
-  string,
+const BrandTwin3DViewport = dynamic(
+  () =>
+    import('@/components/studio/BrandTwin3DViewport').then(
+      (mod) => mod.BrandTwin3DViewport
+    ),
   {
-    label: string;
-    presetKey: string;
-    rawChemicalString: string;
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[520px] rounded-2xl bg-[#FAF5F2] border border-[#EADCD7] flex flex-col items-center justify-center gap-3 text-[#7A6A65] text-xs">
+        <Sparkles className="w-5 h-5 text-[#B85D6F] animate-pulse" />
+        <span>Sculpting 3D Porcelain &amp; Rose-Gold Product Twin...</span>
+      </div>
+    ),
   }
-> = {
-  'huda-matrix': {
-    label: 'Pressed Pigment Compact (Red 28)',
-    presetKey: 'huda-matrix',
-    rawChemicalString:
-      'FORMULATION SHEET // Electric Neon Pressed Compact (Eye & Lid) => Talc: 440,000 ppm | CI 45410 (D&C Red No. 28 Aluminum Lake): 18,500 ppm (1.85%) | CI 15850 (D&C Red No. 7 Lake): 9,400 ppm | CI 77510 (Ferric Ferrocyanide): 14,000 ppm | BACK LABEL: 3.5pt warning buried beneath peel-off sticker',
+);
+
+export interface UserBrandNotebook {
+  id: string;
+  title: string;
+  sourceInput: string;
+  mode: 'generate-distinct-brand' | 'audit-url';
+  createdAt: string;
+  result: ComplianceAuditResult;
+  twinOverride: BrandTwin3DSpec;
+  peelAmount: number;
+  selectedSwatchIdx: number;
+}
+
+const FEMININE_VESSEL_THEMES: Array<{
+  label: string;
+  primaryColorHex: string;
+  secondaryColorHex: string;
+  accentColorHex: string;
+  metallicFinish: 'gold' | 'platinum' | 'obsidian';
+}> = [
+  {
+    label: 'Peony Blush',
+    primaryColorHex: '#F9E8EC',
+    secondaryColorHex: '#F2D2D9',
+    accentColorHex: '#C86D7E',
+    metallicFinish: 'gold',
   },
-  'ca-pfas-trap': {
-    label: 'Velvet Silk Primer (0.1% PTFE)',
-    presetKey: 'ca-pfas-trap',
-    rawChemicalString:
-      'FORMULATION SHEET // Velvet Blur Facial Primer => Aqua: 510,000 ppm | Cyclopentasiloxane (D5): 45,000 ppm (4.5%) | Polytetrafluoroethylene (PTFE): 1,000 ppm (0.10%) | Perfluorononyl Dimethicone: 250 ppm | Niacinamide: 30,000 ppm | CLAIM: "100% Clean Beauty"',
+  {
+    label: 'Porcelain Silk',
+    primaryColorHex: '#F7EFE8',
+    secondaryColorHex: '#EAD8C9',
+    accentColorHex: '#C59B6D',
+    metallicFinish: 'gold',
   },
-  'silvering-toner': {
-    label: 'Silvering Toning Elixir (Clean Pass)',
-    presetKey: 'silvering-toner',
-    rawChemicalString:
-      'FORMULATION SHEET // Silvering Luxe Toning & Scalp Elixir => Aqua: 780,000 ppm | CI 60730 (Ext. D&C Violet No. 2 / Acid Violet 43): 1,200 ppm (0.12%) | Biotinoyl Tripeptide-1: 500 ppm | Niacinamide: 20,000 ppm | OUTER LABEL: 7.5pt high-contrast print, positive cosmetic claims',
+  {
+    label: 'Camellia Lilac',
+    primaryColorHex: '#F3ECF8',
+    secondaryColorHex: '#E2D4F0',
+    accentColorHex: '#A67DB8',
+    metallicFinish: 'platinum',
   },
-};
+  {
+    label: 'Peach Cashmere',
+    primaryColorHex: '#FBF0EA',
+    secondaryColorHex: '#F2DCCF',
+    accentColorHex: '#D48C70',
+    metallicFinish: 'gold',
+  },
+];
 
-export default function HomePage() {
-  const showLandingDefault =
-    (process.env.NEXT_PUBLIC_SHOW_LANDING_PAGE ?? 'true') !== 'false';
-
-  const [activeView, setActiveView] = useState<'landing' | 'studio'>(
-    showLandingDefault ? 'landing' : 'studio'
-  );
-  const [studioPresetId, setStudioPresetId] = useState<string>('huda-matrix');
-  const [studioCustomAuditResult, setStudioCustomAuditResult] =
-    useState<ComplianceAuditResult | null>(null);
-  const [studioInitialUrl, setStudioInitialUrl] = useState<string>(SAMPLE_PRODUCT_URLS[0].url);
-
-  // Simple Entry Point: Instant URL Brand Remixer & Auditor on Homepage
-  const [heroUrlInput, setHeroUrlInput] = useState<string>(SAMPLE_PRODUCT_URLS[0].url);
-  const [heroUrlResult, setHeroUrlResult] = useState<ComplianceAuditResult | null>(null);
-  const [isRemixingHeroUrl, setIsRemixingHeroUrl] = useState<boolean>(false);
-
-  // Hero Live Interactive Formulation Sandbox States
-  const [sandboxKey, setSandboxKey] = useState<string>('huda-matrix');
-  const [sandboxInput, setSandboxInput] = useState<string>(
-    SANDBOX_RAW_SAMPLES['huda-matrix'].rawChemicalString
-  );
-  const [isRunningMockAudit, setIsRunningMockAudit] = useState<boolean>(false);
-  const [mockAuditStage, setMockAuditStage] = useState<string>('');
-  const [hasRunMockAudit, setHasRunMockAudit] = useState<boolean>(true);
-
-  // GitHub Star & README Modal States
-  const [starred, setStarred] = useState<boolean>(false);
-  const [starCount, setStarCount] = useState<number>(2480);
-  const [readmeModalOpen, setReadmeModalOpen] = useState<boolean>(false);
-  const [copiedReadme, setCopiedReadme] = useState<boolean>(false);
-
-  const handleHeroUrlAction = (
-    mode: 'generate-distinct-brand' | 'audit-url',
-    overrideUrl?: string
-  ) => {
-    const targetUrl = (overrideUrl ?? heroUrlInput).trim() || SAMPLE_PRODUCT_URLS[0].url;
-    setHeroUrlInput(targetUrl);
-    setIsRemixingHeroUrl(true);
-
-    const synthesized = synthesizeUrlBrandResult(targetUrl, mode);
-    setTimeout(() => {
-      setHeroUrlResult(synthesized);
-      setIsRemixingHeroUrl(false);
-    }, 180);
-  };
-
-  const handleRunInstantMockAudit = () => {
-    setIsRunningMockAudit(true);
-    setMockAuditStage('Analyzing INCI formulation & normalizing ppm concentrations...');
-    setTimeout(() => {
-      setMockAuditStage(
-        'Cross-indexing US FDA MoCRA, California Toxic-Free Cosmetics Act & EU EC 1223/2009...'
-      );
-    }, 200);
-    setTimeout(() => {
-      setIsRunningMockAudit(false);
-      setHasRunMockAudit(true);
-    }, 450);
-  };
-
-  const launchStudioWithPreset = (presetId: string) => {
-    setStudioCustomAuditResult(null);
-    setStudioPresetId(presetId);
-    setActiveView('studio');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const launchStudioWithCustomResult = (result: ComplianceAuditResult, sourceUrl: string) => {
-    setStudioCustomAuditResult(result);
-    setStudioInitialUrl(sourceUrl);
-    setActiveView('studio');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const activeSandboxResult =
-    DETERMINISTIC_PRESET_RESULTS[sandboxKey] || DETERMINISTIC_PRESET_RESULTS['huda-matrix'];
-
-  if (activeView === 'studio') {
-    return (
-      <>
-        <ComplianceStudioWorkspace
-          initialPresetId={studioPresetId}
-          initialCustomAuditResult={studioCustomAuditResult}
-          initialSourceUrl={studioInitialUrl}
-          onBackToLanding={() => setActiveView('landing')}
-          onOpenReadmeModal={() => setReadmeModalOpen(true)}
-        />
-        <Dialog open={readmeModalOpen} onOpenChange={setReadmeModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>OpenCompact — GitHub README.md</DialogTitle>
-              <DialogDescription>
-                Open-source repository documentation, Gemini 4 Argon architecture, and CLI
-                quickstart.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="prose prose-invert max-w-none text-xs leading-relaxed font-mono bg-slate-950 p-5 rounded-xl border border-slate-800 overflow-x-auto">
-              <div className="markdown-body space-y-3">
-                <Markdown>{OPENCOMPACT_README_MD}</Markdown>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </>
+function createDefaultNotebooks(): UserBrandNotebook[] {
+  return SAMPLE_PRODUCT_URLS.map((preset, idx) => {
+    const synthesized = synthesizeUrlBrandResult(
+      preset.url,
+      'generate-distinct-brand'
     );
-  }
+    return {
+      id: `notebook-seed-${idx + 1}`,
+      title: synthesized.brandTwin3D.brandName,
+      sourceInput: preset.url,
+      mode: 'generate-distinct-brand',
+      createdAt: idx === 0 ? 'Just now' : idx === 1 ? 'Yesterday' : 'Oct 22',
+      result: synthesized,
+      twinOverride: { ...synthesized.brandTwin3D },
+      peelAmount: 0,
+      selectedSwatchIdx: 0,
+    };
+  });
+}
+
+export default function OpenCompactPage() {
+  // Primary navigation mode:
+  // 'new-prompt' -> Minimalist Google / ChatGPT centered entry point
+  // 'notebook'   -> Dedicated Brand Remix Notebook with immediate 3D Product Mockup
+  // 'showcase'   -> Editorial Showcase & Repository Homepage (accessible anytime)
+  // 'studio'     -> Full Multi-Tab Regulatory Lab Studio
+  const [viewMode, setViewMode] = useState<
+    'new-prompt' | 'notebook' | 'showcase' | 'studio'
+  >('new-prompt');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // User Notebooks state (persisted in localStorage)
+  const [notebooks, setNotebooks] = useState<UserBrandNotebook[]>(() =>
+    createDefaultNotebooks()
+  );
+  const [activeNotebookId, setActiveNotebookId] =
+    useState<string>('notebook-seed-1');
+
+  // Minimalist omnibar prompt/URL state
+  const [promptInput, setPromptInput] = useState('');
+  const [promptMode, setPromptMode] = useState<
+    'generate-distinct-brand' | 'audit-url'
+  >('generate-distinct-brand');
+  const [isSynthesizing, setIsSynthesizing] = useState(false);
+  const [followUpInput, setFollowUpInput] = useState('');
+
+  // Editorial Showcase states
+  const [sandboxConcentration, setSandboxConcentration] = useState<number>(0.12);
+  const [sandboxPfasFree, setSandboxPfasFree] = useState<boolean>(false);
+  const [readmeModalOpen, setReadmeModalOpen] = useState(false);
+  const [copiedReadme, setCopiedReadme] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
+
+  // Load saved notebooks from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('opencompact_feminine_notebooks_v3');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setNotebooks(parsed);
+          setActiveNotebookId(parsed[0].id);
+        }
+      }
+    } catch {
+      // Fallback to default notebooks
+    }
+  }, []);
+
+  // Save notebooks whenever updated
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        'opencompact_feminine_notebooks_v3',
+        JSON.stringify(notebooks)
+      );
+    } catch {
+      // Ignore quota errors
+    }
+  }, [notebooks]);
+
+  const activeNotebook =
+    notebooks.find((n) => n.id === activeNotebookId) || notebooks[0];
+
+  // Create a new Notebook from any URL or natural language brand prompt
+  const handleCreateRemixNotebook = async (
+    rawInputText?: string,
+    overrideMode?: 'generate-distinct-brand' | 'audit-url'
+  ) => {
+    const query = (rawInputText ?? promptInput).trim();
+    if (!query) return;
+
+    const chosenMode = overrideMode ?? promptMode;
+    setIsSynthesizing(true);
+
+    let newResult: ComplianceAuditResult = synthesizeUrlBrandResult(
+      query,
+      chosenMode
+    );
+
+    try {
+      const res = await fetch('/api/compliance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          urlMode: chosenMode,
+          sourceProductUrl: query,
+          brandPrompt: `Synthesize a feminine Parisian luxury 3D packaging twin and compliant formulation for: ${query}`,
+          formulationRaw: SAMPLE_PRODUCT_URLS[0].defaultFormulation,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (
+          data &&
+          data.brandTwin3D &&
+          typeof data.brandTwin3D.primaryColorHex === 'string' &&
+          Array.isArray(data.matrixRows)
+        ) {
+          newResult = data;
+        }
+      }
+    } catch {
+      // Deterministic synthesizer already prepared `newResult` with full 3D twin
+    }
+
+    const newNotebook: UserBrandNotebook = {
+      id: `notebook-${Date.now()}`,
+      title: newResult.brandTwin3D.brandName,
+      sourceInput: query,
+      mode: chosenMode,
+      createdAt: 'Just now',
+      result: newResult,
+      twinOverride: { ...newResult.brandTwin3D },
+      peelAmount: 0,
+      selectedSwatchIdx: 0,
+    };
+
+    setNotebooks((prev) => [newNotebook, ...prev]);
+    setActiveNotebookId(newNotebook.id);
+    setPromptInput('');
+    setFollowUpInput('');
+    setIsSynthesizing(false);
+    setViewMode('notebook');
+  };
+
+  const handleUpdateActiveTwin = (partial: Partial<BrandTwin3DSpec>) => {
+    if (!activeNotebook) return;
+    setNotebooks((prev) =>
+      prev.map((nb) =>
+        nb.id === activeNotebook.id
+          ? { ...nb, twinOverride: { ...nb.twinOverride, ...partial } }
+          : nb
+      )
+    );
+  };
+
+  const handleUpdatePeelAmount = (val: number) => {
+    if (!activeNotebook) return;
+    setNotebooks((prev) =>
+      prev.map((nb) =>
+        nb.id === activeNotebook.id ? { ...nb, peelAmount: val } : nb
+      )
+    );
+  };
+
+  const handleSelectSwatch = (swatchHex: string, index: number) => {
+    if (!activeNotebook) return;
+    setNotebooks((prev) =>
+      prev.map((nb) =>
+        nb.id === activeNotebook.id
+          ? {
+              ...nb,
+              selectedSwatchIdx: index,
+              twinOverride: {
+                ...nb.twinOverride,
+                accentColorHex: swatchHex,
+                pigmentOrLiquidHex: swatchHex,
+              },
+            }
+          : nb
+      )
+    );
+  };
+
+  const handleDeleteNotebook = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (notebooks.length <= 1) return;
+    const filtered = notebooks.filter((n) => n.id !== id);
+    setNotebooks(filtered);
+    if (activeNotebookId === id) {
+      setActiveNotebookId(filtered[0].id);
+    }
+  };
+
+  const handleCopyReadme = () => {
+    navigator.clipboard.writeText(OPENCOMPACT_README_MD);
+    setCopiedReadme(true);
+    setTimeout(() => setCopiedReadme(false), 2000);
+  };
+
+  const handleShareNotebook = () => {
+    if (!activeNotebook) return;
+    const summary = `${activeNotebook.twinOverride.brandName} — ${activeNotebook.twinOverride.productTitle}\n${activeNotebook.result.summaryHeadline}\nSource: ${activeNotebook.sourceInput}`;
+    navigator.clipboard.writeText(summary);
+    setCopiedShare(true);
+    setTimeout(() => setCopiedShare(false), 2000);
+  };
+
+  // Interactive Sandbox calculations for the Editorial Showcase view
+  const sandboxUsPass = sandboxConcentration <= 0.1;
+  const sandboxCaPass = !sandboxPfasFree ? false : sandboxConcentration <= 0.08;
+  const sandboxEuPass = !sandboxPfasFree ? false : sandboxConcentration <= 0.05;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
-      {/* STRICT 3-ZONE TOP BAR CONTRACT WITH LUXURY COMPACT EMBLEM */}
-      <header className="flex items-center justify-between gap-8 px-6 py-4 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-md sticky top-0 z-30">
-        {/* Zone 1: Iconic Compact Mirror Logo + Editorial Serif Wordmark */}
-        <a href="#top" className="flex items-center gap-3 whitespace-nowrap shrink-0 group">
-          <span className="h-9 w-9 rounded-full border-2 border-emerald-400/80 bg-gradient-to-br from-emerald-950 via-slate-900 to-amber-950/60 flex items-center justify-center shadow-[0_0_22px_rgba(16,185,129,0.28)]">
-            <span className="h-5 w-5 rounded-full border border-amber-300/70 bg-emerald-400/20 flex items-center justify-center">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+    <div className="min-h-screen bg-[#FAF6F3] text-[#281E1C] flex flex-col selection:bg-[#B85D6F]/20 selection:text-[#281E1C]">
+      {/* Top Minimalist Couture Bar */}
+      <header className="sticky top-0 z-40 h-16 bg-[#FAF6F3]/90 backdrop-blur-md border-b border-[#EADCD7] px-4 sm:px-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="p-2 rounded-full text-[#7A6A65] hover:text-[#281E1C] hover:bg-[#F3EAE6] transition-colors"
+            title={sidebarOpen ? 'Hide Notebooks Sidebar' : 'Show Notebooks Sidebar'}
+          >
+            {sidebarOpen ? (
+              <PanelLeftClose className="w-4 h-4" />
+            ) : (
+              <PanelLeftOpen className="w-4 h-4" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('new-prompt')}
+            className="text-left focus:outline-none"
+          >
+            <OpenCompactLogo size="sm" />
+          </button>
+        </div>
+
+        {/* Center Mode Switcher Pills */}
+        <div className="hidden md:flex items-center gap-1 p-1 rounded-full bg-[#F3EAE6] border border-[#EADCD7]">
+          <button
+            type="button"
+            onClick={() => setViewMode('new-prompt')}
+            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+              viewMode === 'new-prompt'
+                ? 'bg-white text-[#281E1C] shadow-xs'
+                : 'text-[#7A6A65] hover:text-[#281E1C]'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#B85D6F]" />
+            New Remix Prompt
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('notebook')}
+            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+              viewMode === 'notebook'
+                ? 'bg-white text-[#281E1C] shadow-xs'
+                : 'text-[#7A6A65] hover:text-[#281E1C]'
+            }`}
+          >
+            <Box className="w-3.5 h-3.5 text-[#B85D6F]" />
+            Active 3D Notebook
+            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-[#FBF2F3] text-[#B85D6F] text-[10px]">
+              {notebooks.length}
             </span>
-          </span>
-          <span
-            className="text-xl font-semibold tracking-wider text-slate-50"
-            style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('showcase')}
+            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+              viewMode === 'showcase'
+                ? 'bg-white text-[#281E1C] shadow-xs'
+                : 'text-[#7A6A65] hover:text-[#281E1C]'
+            }`}
           >
-            OPENCOMPACT
-          </span>
-        </a>
+            <Compass className="w-3.5 h-3.5 text-[#B85D6F]" />
+            Editorial Homepage
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('studio')}
+            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+              viewMode === 'studio'
+                ? 'bg-white text-[#281E1C] shadow-xs'
+                : 'text-[#7A6A65] hover:text-[#281E1C]'
+            }`}
+          >
+            <Beaker className="w-3.5 h-3.5 text-[#B85D6F]" />
+            Full Lab Studio
+          </button>
+        </div>
 
-        {/* Zone 2: 4 Concise Navigation Links */}
-        <nav className="hidden md:flex items-center gap-7 text-xs font-medium tracking-wider uppercase text-slate-400">
-          <a
-            href="#collections"
-            className="hover:text-slate-50 transition-colors whitespace-nowrap shrink-0"
+        {/* Right Actions */}
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setViewMode(viewMode === 'showcase' ? 'new-prompt' : 'showcase')
+            }
+            className="text-xs rounded-full md:hidden"
           >
-            Collections
-          </a>
-          <a
-            href="#sandbox"
-            className="hover:text-slate-50 transition-colors whitespace-nowrap shrink-0"
+            {viewMode === 'showcase' ? 'New Prompt' : 'Editorial Home'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setReadmeModalOpen(true)}
+            className="text-xs text-[#7A6A65] hover:text-[#281E1C] hidden sm:inline-flex"
           >
-            Formula Lab
-          </a>
-          <a
-            href="#architecture"
-            className="hover:text-slate-50 transition-colors whitespace-nowrap shrink-0"
+            <BookOpen className="w-3.5 h-3.5 mr-1.5 text-[#B85D6F]" />
+            README
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => setViewMode('new-prompt')}
+            className="rounded-full text-xs"
           >
-            Architecture
-          </a>
-          <a
-            href="#founder-ethos"
-            className="hover:text-slate-50 transition-colors whitespace-nowrap shrink-0"
-          >
-            Beauty Ethos
-          </a>
-        </nav>
-
-        {/* Zone 3: 1 Primary Action */}
-        <div className="flex items-center gap-3 shrink-0">
-          <Button size="default" onClick={() => launchStudioWithPreset(sandboxKey)}>
-            <span>Launch App Studio</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            <Plus className="w-3.5 h-3.5" />
+            New Remix
           </Button>
         </div>
       </header>
 
-      {/* EDITORIAL PRESTIGE BEAUTY HERO + SIMPLE 1-STEP ENTRY POINT */}
-      <section
-        id="top"
-        className="relative px-6 pt-12 pb-20 border-b border-slate-800/80 overflow-hidden bg-[radial-gradient(ellipse_at_top,_rgba(16,185,129,0.14),_transparent_65%)]"
-      >
-        <div className="max-w-[1280px] mx-auto space-y-12">
-          {/* Split Editorial Hero: Left Brand Identity + Right Luxury Compact & Serum Photography */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            <div className="lg:col-span-7 space-y-6 text-left">
-              {/* Luxury Brand Crest */}
-              <div className="inline-flex items-center gap-3 text-xs tracking-widest uppercase text-emerald-400 font-medium">
-                <span>MODERN BEAUTY ATELIER &amp; REGULATORY ENGINE</span>
-                <span aria-hidden="true">·</span>
-                <span>US FDA · CALIFORNIA · EU</span>
-              </div>
-
-              <h1
-                className="text-4xl sm:text-5xl lg:text-[54px] font-semibold tracking-tight text-slate-50 leading-[1.1] drop-shadow-[0_0_30px_rgba(16,185,129,0.40)]"
-                style={{
-                  fontFamily: 'var(--font-serif), Georgia, serif',
-                  textWrap: 'balance',
-                }}
-              >
-                The Open Source Shield Against Regulatory Patchworks.
-              </h1>
-
-              <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
-                Designed for modern beauty founders, formulators, and retail buyers at the standard
-                of <strong className="text-slate-100">Sephora</strong> and{' '}
-                <strong className="text-slate-100">Silvering</strong>. Paste any beauty product URL
-                to remix it into a 100% globally compliant luxury brand, inspect 3D packaging peel
-                layers, and generate 15-day FDA MoCRA dossiers.
-              </p>
-
-              {/* Hero Call-To-Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4 pt-1">
-                <Button size="lg" onClick={() => launchStudioWithPreset(sandboxKey)}>
-                  <Sparkles className="h-4 w-4" />
-                  <span>Launch App Studio</span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => {
-                    setStarred((prev) => !prev);
-                    setStarCount((prev) => (starred ? prev - 1 : prev + 1));
-                    setReadmeModalOpen(true);
-                  }}
+      {/* Main Workspace Container: Left Notebook Sidebar + Dynamic Canvas */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Collapsible Notebook Sidebar (ChatGPT / NotebookLM Inspired) */}
+        <AnimatePresence initial={false}>
+          {sidebarOpen && (
+            <motion.aside
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 290, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: 'easeInOut' }}
+              className="shrink-0 bg-[#F6EFEA] border-r border-[#EADCD7] flex flex-col justify-between overflow-hidden select-none"
+            >
+              <div className="p-4 space-y-4 overflow-y-auto flex-1">
+                {/* New Brand Remix Button */}
+                <button
+                  type="button"
+                  onClick={() => setViewMode('new-prompt')}
+                  className={`w-full py-2.5 px-3.5 rounded-xl border text-left flex items-center justify-between transition-all ${
+                    viewMode === 'new-prompt'
+                      ? 'bg-white border-[#B85D6F]/40 text-[#281E1C] shadow-xs'
+                      : 'bg-white/70 border-[#EADCD7] text-[#281E1C] hover:bg-white'
+                  }`}
                 >
-                  <Star
-                    className={`h-4 w-4 ${
-                      starred ? 'fill-emerald-400 text-emerald-400' : 'text-slate-300'
-                    }`}
-                  />
-                  <span>Star on GitHub</span>
-                  <span className="font-mono text-xs text-emerald-400 tabular-nums ml-1">
-                    {starCount.toLocaleString()}
+                  <span className="flex items-center gap-2.5 text-xs font-medium">
+                    <span className="w-6 h-6 rounded-full bg-[#FBF2F3] border border-[#E5C1C8] flex items-center justify-center text-[#B85D6F]">
+                      <Plus className="w-3.5 h-3.5" />
+                    </span>
+                    New Brand Remix
                   </span>
-                </Button>
-              </div>
-            </div>
+                  <span className="text-[10px] font-mono text-[#9E8C86]">
+                    URL / 3D
+                  </span>
+                </button>
 
-            {/* Right Column: Luxury Editorial Beauty Still-Life */}
-            <div className="lg:col-span-5">
-              <div className="relative rounded-2xl overflow-hidden border border-slate-800/90 bg-slate-900 shadow-[0_25px_70px_rgba(0,0,0,0.65)] aspect-[16/11]">
-                <Image
-                  src="/images/opencompact_luxury_hero.jpg"
-                  alt="OpenCompact luxury cosmetic compact mirror and botanical serum bottle on travertine stone"
-                  fill
-                  priority
-                  referrerPolicy="no-referrer"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
-                  <div>
-                    <div className="text-[11px] uppercase tracking-widest text-emerald-300 font-medium">
-                      3D Brand Twin + Formulation Clearance
-                    </div>
-                    <div
-                      className="text-base font-semibold text-slate-50"
-                      style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-                    >
-                      Every Compact Vetted for Retail Readiness
-                    </div>
+                {/* User's Saved Brand Notebooks */}
+                <div className="space-y-1.5">
+                  <div className="px-2 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8C7A75]">
+                      Your Brand Notebooks ({notebooks.length})
+                    </span>
                   </div>
-                  <Badge variant="pass">[PASS · 3 JURISDICTIONS]</Badge>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* SIMPLE START HERE BAR: INSTANT PRODUCT URL BRAND REMIXER & AUDITOR */}
-          <div className="rounded-2xl border border-emerald-500/40 bg-slate-900/95 p-6 shadow-[0_20px_60px_rgba(16,185,129,0.10)] space-y-5">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-emerald-400">
-                  <Wand2 className="h-4 w-4" />
-                  <span>START HERE — INSTANT PRODUCT URL BRAND REMIXER &amp; SAFETY AUDITOR</span>
-                </div>
-                <h2
-                  className="text-xl sm:text-2xl font-semibold text-slate-50"
-                  style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-                >
-                  Paste Any Beauty Product URL to Remix a Clean, Compliant Luxury Brand
-                </h2>
-              </div>
-
-              {/* 1-Click Sample Product URLs */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                {SAMPLE_PRODUCT_URLS.map((sample) => (
-                  <button
-                    key={sample.id}
-                    type="button"
-                    onClick={() => {
-                      setHeroUrlInput(sample.url);
-                      handleHeroUrlAction('generate-distinct-brand', sample.url);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer border ${
-                      heroUrlInput === sample.url
-                        ? 'border-emerald-500/60 bg-emerald-950/40 text-emerald-300'
-                        : 'border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-700'
-                    }`}
-                  >
-                    {sample.id === 'url-huda-neon'
-                      ? 'Try: Sephora Neon Palette'
-                      : sample.id === 'url-ca-pfas-primer'
-                      ? 'Try: Ulta Velvet Primer'
-                      : 'Try: Silvering Toning Elixir'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* URL Input + Action Buttons */}
-            <div className="flex flex-col md:flex-row gap-3 items-stretch">
-              <div className="relative flex-1">
-                <Link2 className="h-4 w-4 text-emerald-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="url"
-                  value={heroUrlInput}
-                  onChange={(e) => setHeroUrlInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleHeroUrlAction('generate-distinct-brand', heroUrlInput);
-                    }
-                  }}
-                  placeholder="Paste any Sephora, Ulta, or beauty brand product URL (e.g., https://www.sephora.com/product/...)"
-                  className="w-full h-full min-h-[48px] pl-10 pr-4 rounded-xl border border-slate-700 bg-slate-950 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
-                <Button
-                  size="lg"
-                  onClick={() => handleHeroUrlAction('generate-distinct-brand', heroUrlInput)}
-                  disabled={isRemixingHeroUrl}
-                  className="w-full sm:w-auto"
-                >
-                  <Wand2 className="h-4 w-4" />
-                  <span>
-                    {isRemixingHeroUrl
-                      ? 'Synthesizing Brand...'
-                      : 'Remix into Compliant Brand'}
-                  </span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => handleHeroUrlAction('audit-url', heroUrlInput)}
-                  disabled={isRemixingHeroUrl}
-                  className="w-full sm:w-auto"
-                >
-                  <Search className="h-4 w-4" />
-                  <span>Audit Original URL</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* IMMEDIATE URL REMIX / AUDIT RESULT SHOWCASE RIGHT IN HERO */}
-            {heroUrlResult && (
-              <div
-                className={`rounded-xl border p-5 space-y-4 transition-all ${
-                  heroUrlResult.overallStatus === 'PASS'
-                    ? 'border-emerald-500/60 bg-slate-950/95'
-                    : 'border-rose-500/60 bg-slate-950/95'
-                }`}
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
                   <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <Badge
-                        variant={heroUrlResult.overallStatus === 'PASS' ? 'pass' : 'violation'}
-                      >
-                        [{heroUrlResult.overallStatus}]
-                      </Badge>
-                      <span className="text-emerald-400 font-medium flex items-center gap-1">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        <span>
-                          {heroUrlResult.urlRemixMetadata?.mode === 'generate-distinct-brand'
-                            ? 'Similar-But-Distinct Compliant Brand Synthesized'
-                            : 'Reference Product URL Compliance Audit'}
-                        </span>
-                      </span>
-                      <span className="text-slate-500">·</span>
-                      <span className="font-mono text-slate-400 truncate max-w-md">
-                        {heroUrlResult.urlRemixMetadata?.sourceUrl}
-                      </span>
-                    </div>
+                    {notebooks.map((nb) => {
+                      const isSelected =
+                        nb.id === activeNotebook?.id && viewMode === 'notebook';
+                      return (
+                        <div
+                          key={nb.id}
+                          onClick={() => {
+                            setActiveNotebookId(nb.id);
+                            setViewMode('notebook');
+                          }}
+                          className={`group relative rounded-xl p-2.5 cursor-pointer transition-all border ${
+                            isSelected
+                              ? 'bg-white border-[#D6958E] shadow-xs'
+                              : 'border-transparent hover:bg-white/60 hover:border-[#EADCD7]'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            {/* 3D Vessel Swatch Preview Pill */}
+                            <div
+                              className="w-4 h-4 rounded-full shrink-0 mt-0.5 border border-[#281E1C]/15 shadow-2xs"
+                              style={{
+                                background: `linear-gradient(135deg, ${nb.twinOverride.primaryColorHex} 0%, ${nb.twinOverride.accentColorHex} 100%)`,
+                              }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-medium text-[#281E1C] truncate">
+                                {nb.twinOverride.brandName}
+                              </div>
+                              <div className="text-[11px] text-[#7A6A65] truncate italic font-serif">
+                                {nb.twinOverride.productTitle}
+                              </div>
+                              <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[#9E8C86]">
+                                <span className="truncate max-w-[140px]">
+                                  {nb.sourceInput.replace(/^https?:\/\/(www\.)?/, '')}
+                                </span>
+                                <span>•</span>
+                                <span>{nb.createdAt}</span>
+                              </div>
+                            </div>
+                            {notebooks.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteNotebook(nb.id, e)}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-[#9E8C86] hover:text-[#B93848] hover:bg-[#FDF2F3] transition-all"
+                                title="Delete Notebook"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
 
-                    <h3
-                      className="text-xl font-semibold text-slate-50"
-                      style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-                    >
-                      {heroUrlResult.productName}
-                    </h3>
-                    <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
-                      {heroUrlResult.urlRemixMetadata?.differentiationStrategy ||
-                        heroUrlResult.summaryHeadline}
-                    </p>
+              {/* Bottom Directory Links in Sidebar */}
+              <div className="p-3 border-t border-[#EADCD7] bg-[#F2E8E3]/60 space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('showcase')}
+                  className={`w-full px-3 py-2 rounded-lg text-xs flex items-center justify-between transition-colors ${
+                    viewMode === 'showcase'
+                      ? 'bg-white text-[#281E1C] font-medium shadow-2xs'
+                      : 'text-[#6E5D58] hover:bg-white/70 hover:text-[#281E1C]'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Compass className="w-3.5 h-3.5 text-[#B85D6F]" />
+                    Editorial Homepage
+                  </span>
+                  <ArrowRight className="w-3 h-3 opacity-60" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('studio')}
+                  className={`w-full px-3 py-2 rounded-lg text-xs flex items-center justify-between transition-colors ${
+                    viewMode === 'studio'
+                      ? 'bg-white text-[#281E1C] font-medium shadow-2xs'
+                      : 'text-[#6E5D58] hover:bg-white/70 hover:text-[#281E1C]'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Beaker className="w-3.5 h-3.5 text-[#B85D6F]" />
+                    Full Regulatory Lab
+                  </span>
+                  <ArrowRight className="w-3 h-3 opacity-60" />
+                </button>
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
+
+        {/* Main Content Canvas */}
+        <main className="flex-1 overflow-y-auto">
+          {/* =====================================================================
+              VIEW 1: MINIMALIST GOOGLE / CHATGPT / NOTEBOOK ENTRY POINT
+             ===================================================================== */}
+          {viewMode === 'new-prompt' && (
+            <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-between px-4 sm:px-8 py-10 max-w-4xl mx-auto">
+              <div className="flex-1 flex flex-col items-center justify-center text-center my-auto py-8">
+                {/* Subtle Editorial Floral Badge */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FBF2F3] border border-[#E5C1C8] text-[#9E4758] text-[11px] tracking-[0.18em] uppercase mb-6"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Atelier de Beauté • 3D Brand &amp; Formulation Notebook</span>
+                </motion.div>
+
+                {/* Feminine High-Fashion Serif Greeting */}
+                <motion.h1
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.05 }}
+                  className="font-serif text-4xl sm:text-6xl font-normal tracking-tight text-[#281E1C] leading-[1.08] max-w-2xl"
+                >
+                  What beauty icon shall we{' '}
+                  <span className="italic font-normal text-[#B85D6F]">
+                    reimagine in 3D
+                  </span>{' '}
+                  today?
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="mt-4 text-sm sm:text-base text-[#7A6A65] max-w-xl font-light leading-relaxed"
+                >
+                  Paste any Sephora, Ulta, or prestige product URL — or describe a cosmetic concept. Each remix creates a dedicated{' '}
+                  <strong className="font-medium text-[#281E1C]">
+                    Brand Notebook
+                  </strong>{' '}
+                  with an interactive 3D compact mockup, shade palette, and clean EU/MoCRA formulation.
+                </motion.p>
+
+                {/* Google / ChatGPT Minimalist Omnibar Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.15 }}
+                  className="w-full max-w-2xl mt-8 bg-white rounded-3xl border border-[#E2D2CC] shadow-[0_20px_60px_-20px_rgba(120,75,65,0.14)] p-3 sm:p-4 transition-all focus-within:border-[#B85D6F] focus-within:shadow-[0_20px_60px_-15px_rgba(184,93,111,0.20)]"
+                >
+                  <div className="flex items-center gap-3 px-2 py-1">
+                    <Search className="w-5 h-5 text-[#B85D6F] shrink-0" />
+                    <input
+                      type="text"
+                      value={promptInput}
+                      onChange={(e) => setPromptInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleCreateRemixNotebook();
+                      }}
+                      placeholder="Paste a product URL (e.g. sephora.com/product/...) or describe a luxury clean product..."
+                      className="w-full bg-transparent text-sm sm:text-base text-[#281E1C] placeholder:text-[#A69590] focus:outline-none"
+                    />
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                  <div className="mt-3 pt-2.5 border-t border-[#F2E8E3] flex flex-wrap items-center justify-between gap-2 px-1">
+                    {/* Mode Toggle Pills */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setPromptMode('generate-distinct-brand')}
+                        className={`px-3 py-1 rounded-full text-xs transition-all flex items-center gap-1.5 ${
+                          promptMode === 'generate-distinct-brand'
+                            ? 'bg-[#FBF2F3] text-[#9E4758] border border-[#E5C1C8] font-medium'
+                            : 'text-[#7A6A65] hover:bg-[#FAF6F3]'
+                        }`}
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        Remix Brand + 3D Mockup
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPromptMode('audit-url')}
+                        className={`px-3 py-1 rounded-full text-xs transition-all flex items-center gap-1.5 ${
+                          promptMode === 'audit-url'
+                            ? 'bg-[#FBF2F3] text-[#9E4758] border border-[#E5C1C8] font-medium'
+                            : 'text-[#7A6A65] hover:bg-[#FAF6F3]'
+                        }`}
+                      >
+                        <FileCheck2 className="w-3 h-3" />
+                        Audit Existing URL
+                      </button>
+                    </div>
+
                     <Button
+                      variant="default"
                       size="default"
-                      onClick={() => launchStudioWithCustomResult(heroUrlResult, heroUrlInput)}
+                      onClick={() => handleCreateRemixNotebook()}
+                      disabled={isSynthesizing || !promptInput.trim()}
+                      className="rounded-full px-5"
                     >
-                      <Layers className="h-4 w-4" />
-                      <span>Interact with 3D Brand Twin in Studio</span>
-                      <ArrowRight className="h-4 w-4" />
+                      {isSynthesizing ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          Sculpting 3D Notebook...
+                        </>
+                      ) : (
+                        <>
+                          Create 3D Notebook
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </>
+                      )}
                     </Button>
                   </div>
+                </motion.div>
+
+                {/* Instant 1-Click Starter Prompts / URLs */}
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-2 max-w-2xl">
+                  <span className="text-[11px] uppercase tracking-[0.16em] text-[#9E8C86] mr-1">
+                    Try a 1-click remix:
+                  </span>
+                  {SAMPLE_PRODUCT_URLS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setPromptInput(item.url);
+                        handleCreateRemixNotebook(
+                          item.url,
+                          'generate-distinct-brand'
+                        );
+                      }}
+                      className="px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FBF2F3] border border-[#EADCD7] hover:border-[#D6958E] text-xs text-[#574945] hover:text-[#281E1C] transition-all flex items-center gap-1.5 shadow-2xs"
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#C86D7E]" />
+                      <span>{item.label.replace(/ URL$/, '')}</span>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const customUrl =
+                        'https://www.dior.com/en_us/beauty/products/roseraie-velvet-compact-palette';
+                      setPromptInput(customUrl);
+                      handleCreateRemixNotebook(
+                        customUrl,
+                        'generate-distinct-brand'
+                      );
+                    }}
+                    className="px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FBF2F3] border border-[#EADCD7] hover:border-[#D6958E] text-xs text-[#574945] hover:text-[#281E1C] transition-all flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#E6A8B2]" />
+                    <span>Peony Rose Couture Compact</span>
+                  </button>
                 </div>
 
-                {/* Before -> After Clean Substitutions (if in Remix mode) */}
-                {heroUrlResult.urlRemixMetadata?.substitutedIngredients &&
-                  heroUrlResult.urlRemixMetadata.substitutedIngredients.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
-                        Clean Formulation Substitutions (Removing Regulatory Traps):
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {heroUrlResult.urlRemixMetadata.substitutedIngredients.map((sub, i) => (
-                          <div
-                            key={i}
-                            className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 text-xs space-y-1"
-                          >
-                            <div className="font-mono text-rose-400 line-through text-[11px]">
-                              Replaced: {sub.replaced}
-                            </div>
-                            <div className="font-mono text-emerald-300 font-semibold">
-                              Clean Substitute: {sub.replacement}
-                            </div>
-                            <p className="text-slate-400 text-[11px] leading-relaxed">
-                              {sub.reason}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                {/* Recent Notebooks Strip */}
+                <div className="w-full max-w-3xl mt-12 pt-8 border-t border-[#EADCD7]">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[11px] uppercase tracking-[0.18em] text-[#8C7A75] font-medium">
+                      Recent Brand Notebooks (Click to open 3D Mockup)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('showcase')}
+                      className="text-xs text-[#B85D6F] hover:underline flex items-center gap-1"
+                    >
+                      <span>Explore Full Editorial Homepage</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
 
-                {/* Quick 3-Jurisdiction Table Preview for the URL Result */}
-                <div className="rounded-xl border border-slate-800 overflow-hidden">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-left">
+                    {notebooks.slice(0, 3).map((nb) => (
+                      <div
+                        key={nb.id}
+                        onClick={() => {
+                          setActiveNotebookId(nb.id);
+                          setViewMode('notebook');
+                        }}
+                        className="group p-4 rounded-2xl bg-white border border-[#EADCD7] hover:border-[#D6958E] shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-1.5">
+                              {nb.twinOverride.palettePanColorsHex
+                                .slice(0, 4)
+                                .map((hex, i) => (
+                                  <span
+                                    key={i}
+                                    className="w-3.5 h-3.5 rounded-full border border-[#281E1C]/10"
+                                    style={{ backgroundColor: hex }}
+                                  />
+                                ))}
+                            </div>
+                            <span className="text-[10px] font-mono text-[#9E8C86]">
+                              3D TWIN READY
+                            </span>
+                          </div>
+                          <div className="font-serif text-lg font-medium text-[#281E1C] group-hover:text-[#B85D6F] transition-colors">
+                            {nb.twinOverride.brandName}
+                          </div>
+                          <div className="text-xs text-[#7A6A65] italic font-serif">
+                            {nb.twinOverride.productTitle}
+                          </div>
+                        </div>
+                        <div className="mt-3 pt-2.5 border-t border-[#F5ECE8] flex items-center justify-between text-[11px] text-[#8C7A75]">
+                          <span className="truncate">
+                            {nb.sourceInput.replace(/^https?:\/\/(www\.)?/, '')}
+                          </span>
+                          <ArrowRight className="w-3.5 h-3.5 text-[#B85D6F] group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* =====================================================================
+              VIEW 2: DEDICATED BRAND NOTEBOOK (WITH IMMEDIATE 3D PRODUCT MOCKUP)
+             ===================================================================== */}
+          {viewMode === 'notebook' && activeNotebook && (
+            <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+              {/* Notebook Header Bar */}
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[#EADCD7]">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <Badge
+                      variant={
+                        activeNotebook.result.overallStatus === 'PASS'
+                          ? 'pass'
+                          : 'violation'
+                      }
+                    >
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      {activeNotebook.result.overallStatus === 'PASS'
+                        ? '100% Globally Cleared 3D Brand Notebook'
+                        : 'Regulatory Violations Detected in Audited URL'}
+                    </Badge>
+                    <span className="text-xs font-mono text-[#8C7A75] truncate max-w-md">
+                      Source: {activeNotebook.sourceInput}
+                    </span>
+                  </div>
+                  <h1 className="font-serif text-3xl sm:text-5xl text-[#281E1C] tracking-tight">
+                    {activeNotebook.twinOverride.brandName}{' '}
+                    <span className="italic font-normal text-[#B85D6F]">
+                      — {activeNotebook.twinOverride.productTitle}
+                    </span>
+                  </h1>
+                  <p className="mt-1 text-sm text-[#7A6A65] italic font-serif">
+                    {activeNotebook.twinOverride.subtitle}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleShareNotebook}
+                    className="rounded-full text-xs"
+                  >
+                    {copiedShare ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-[#2D6A4F]" />
+                        Copied Brief
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="w-3.5 h-3.5" />
+                        Copy Brand Brief
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setViewMode('studio')}
+                    className="rounded-full text-xs"
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    Open in Full Lab Studio
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setViewMode('new-prompt')}
+                    className="rounded-full text-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Remix Another URL
+                  </Button>
+                </div>
+              </div>
+
+              {/* HERO ROW OF NOTEBOOK: LIVE 3D PRODUCT MOCKUP (LEFT) + BRAND & SHADE ATELIER (RIGHT) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Left 7 Columns: Live Interactive Three.js 3D Product Mockup + Casing Customizer */}
+                <div className="lg:col-span-7 space-y-4">
+                  {/* Live 3D Casing & Vessel Finish Toolbar */}
+                  <div className="p-4 rounded-2xl bg-white border border-[#EADCD7] shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Palette className="w-4 h-4 text-[#B85D6F]" />
+                      <span className="text-xs font-medium text-[#281E1C]">
+                        3D Porcelain &amp; Enamel Finish:
+                      </span>
+                    </div>
+
+                    {/* Feminine Color Theme Swatches */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {FEMININE_VESSEL_THEMES.map((theme) => {
+                        const isCurrent =
+                          activeNotebook.twinOverride.primaryColorHex ===
+                          theme.primaryColorHex;
+                        return (
+                          <button
+                            key={theme.label}
+                            type="button"
+                            onClick={() =>
+                              handleUpdateActiveTwin({
+                                primaryColorHex: theme.primaryColorHex,
+                                secondaryColorHex: theme.secondaryColorHex,
+                                accentColorHex: theme.accentColorHex,
+                                metallicFinish: theme.metallicFinish,
+                              })
+                            }
+                            className={`px-2.5 py-1 rounded-full text-[11px] flex items-center gap-1.5 border transition-all ${
+                              isCurrent
+                                ? 'bg-[#FBF2F3] border-[#B85D6F] text-[#281E1C] font-medium shadow-2xs'
+                                : 'bg-[#FAF6F3] border-[#EADCD7] text-[#7A6A65] hover:text-[#281E1C]'
+                            }`}
+                          >
+                            <span
+                              className="w-3 h-3 rounded-full border border-[#281E1C]/15"
+                              style={{
+                                background: `linear-gradient(135deg, ${theme.primaryColorHex} 0%, ${theme.accentColorHex} 100%)`,
+                              }}
+                            />
+                            {theme.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* LIVE INTERACTIVE THREE.JS 3D PRODUCT MOCKUP */}
+                  <BrandTwin3DViewport
+                    spec={activeNotebook.twinOverride}
+                    linting={activeNotebook.result.artworkLinting}
+                    peelAmount={activeNotebook.peelAmount}
+                    onPeelAmountChange={handleUpdatePeelAmount}
+                    onVesselArchetypeChange={(archetype) =>
+                      handleUpdateActiveTwin({ vesselArchetype: archetype })
+                    }
+                  />
+                </div>
+
+                {/* Right 5 Columns: Remixed Brand Identity, Clickable Shade Swatches, & Clean Substitutions */}
+                <div className="lg:col-span-5 space-y-6">
+                  {/* Card 1: Remixed Brand House Identity & Interactive Shade Swatches */}
+                  <Card className="rounded-2xl border-[#EADCD7] bg-white">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#B85D6F]">
+                          Remixed Brand Identity
+                        </span>
+                        <Badge variant="pass">
+                          {activeNotebook.result.productCategory}
+                        </Badge>
+                      </div>
+                      <CardTitle className="font-serif text-2xl text-[#281E1C] mt-1">
+                        {activeNotebook.twinOverride.brandName}
+                      </CardTitle>
+                      <CardDescription className="text-xs text-[#6E5D58] leading-relaxed">
+                        {activeNotebook.result.urlRemixMetadata
+                          .differentiationStrategy ||
+                          activeNotebook.result.summaryHeadline}
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="space-y-5">
+                      {/* Clickable 9-Pan Shade Swatches that update the 3D Mockup live */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[11px] uppercase tracking-[0.15em] text-[#7A6A65] font-medium">
+                            Harmonized 9-Pan Shade Palette (Click to tint 3D Vessel)
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {activeNotebook.twinOverride.palettePanColorsHex
+                            .slice(0, 6)
+                            .map((hex, idx) => {
+                              const isSelected =
+                                activeNotebook.selectedSwatchIdx === idx;
+                              const shadeNames = [
+                                'Pivoine Rose',
+                                'Soie de Nacre',
+                                'Velours Mauve',
+                                'Pétale Doré',
+                                'Cachemire Rosé',
+                                'Lumière Iris',
+                              ];
+                              return (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => handleSelectSwatch(hex, idx)}
+                                  className={`p-2 rounded-xl border text-left transition-all flex items-center gap-2 ${
+                                    isSelected
+                                      ? 'bg-[#FBF2F3] border-[#B85D6F] shadow-2xs'
+                                      : 'bg-[#FAF6F3]/70 border-[#EADCD7] hover:bg-white'
+                                  }`}
+                                >
+                                  <span
+                                    className="w-5 h-5 rounded-full shrink-0 border border-[#281E1C]/15 shadow-inner"
+                                    style={{ backgroundColor: hex }}
+                                  />
+                                  <div className="min-w-0">
+                                    <div className="text-[11px] font-medium text-[#281E1C] truncate">
+                                      {shadeNames[idx]}
+                                    </div>
+                                    <div className="text-[9px] font-mono text-[#8C7A75]">
+                                      {hex}
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+
+                      {/* Before -> After Clean Ingredient Substitutions */}
+                      <div className="pt-3 border-t border-[#F2E8E3]">
+                        <div className="text-[11px] uppercase tracking-[0.15em] text-[#7A6A65] font-medium mb-2.5">
+                          Before → After Clean Botanical Substitutions
+                        </div>
+                        <div className="space-y-2.5">
+                          {activeNotebook.result.urlRemixMetadata.substitutedIngredients
+                            .length > 0 ? (
+                            activeNotebook.result.urlRemixMetadata.substitutedIngredients.map(
+                              (sub, idx) => (
+                                <div
+                                  key={idx}
+                                  className="p-3 rounded-xl bg-[#FAF6F3] border border-[#EADCD7] space-y-1"
+                                >
+                                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                                    <span className="line-through text-[#B93848] font-medium">
+                                      {sub.replaced}
+                                    </span>
+                                    <ArrowRight className="w-3 h-3 text-[#8C7A75]" />
+                                    <span className="text-[#2D6A4F] font-semibold">
+                                      {sub.replacement}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-[#6E5D58] leading-relaxed">
+                                    {sub.reason}
+                                  </p>
+                                </div>
+                              )
+                            )
+                          ) : (
+                            <div className="p-3 rounded-xl bg-[#FAF6F3] border border-[#EADCD7] flex items-center justify-between">
+                              <span className="text-xs text-[#6E5D58]">
+                                Auditing original URL formulation. Click to generate a clean remix:
+                              </span>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() =>
+                                  handleCreateRemixNotebook(
+                                    activeNotebook.sourceInput,
+                                    'generate-distinct-brand'
+                                  )
+                                }
+                              >
+                                Remix Clean Brand
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* BOTTOM ROW OF NOTEBOOK: MULTI-MARKET CLEARANCE TABLE + FOLLOW-UP REMIX BAR */}
+              <Card className="rounded-2xl border-[#EADCD7] bg-white overflow-hidden">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#FAF6F3] border-b border-[#EADCD7]">
+                  <div>
+                    <CardTitle className="font-serif text-xl text-[#281E1C]">
+                      Multi-Jurisdictional Regulatory Clearance Matrix
+                    </CardTitle>
+                    <CardDescription className="text-xs text-[#7A6A65]">
+                      Deterministic ingredient-by-ingredient toxicology audit across US FDA MoCRA, California AB 2762, and EU Regulation (EC) No 1223/2009.
+                    </CardDescription>
+                  </div>
+                  <Badge
+                    variant={
+                      activeNotebook.result.overallStatus === 'PASS'
+                        ? 'pass'
+                        : 'violation'
+                    }
+                  >
+                    {activeNotebook.result.overallStatus === 'PASS'
+                      ? 'All 3 Global Markets Cleared'
+                      : 'Jurisdictional Conflict Flagged'}
+                  </Badge>
+                </CardHeader>
+                <CardContent className="p-0">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Evaluated Ingredient</TableHead>
-                        <TableHead className="text-right">Concentration</TableHead>
-                        <TableHead>US FDA (MoCRA)</TableHead>
-                        <TableHead>California (Toxic-Free)</TableHead>
-                        <TableHead>European Union (EC 1223/2009)</TableHead>
+                        <TableHead>INCI Ingredient</TableHead>
+                        <TableHead>CAS Number</TableHead>
+                        <TableHead>Conc. %</TableHead>
+                        <TableHead>US FDA MoCRA</TableHead>
+                        <TableHead>California AB 2762</TableHead>
+                        <TableHead>EU (EC) 1223/2009</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {heroUrlResult.matrixRows.map((row) => (
+                      {activeNotebook.result.matrixRows.map((row) => (
                         <TableRow key={row.id}>
-                          <TableCell>
-                            <div className="font-semibold text-slate-100">{row.ingredientName}</div>
-                            <div className="text-[11px] font-mono text-slate-400">
-                              {row.inciName} · CAS {row.casNumber}
+                          <TableCell className="font-medium text-[#281E1C]">
+                            <div>{row.ingredientName}</div>
+                            <div className="text-[11px] text-[#7A6A65] font-normal">
+                              {row.inciName}
                             </div>
                           </TableCell>
-                          <TableCell className="text-right font-mono tabular-nums">
-                            <div className="font-semibold text-slate-100">
-                              {row.concentrationPpm.toLocaleString()} ppm
-                            </div>
-                            <div className="text-[11px] text-slate-400">
-                              {row.concentrationPercent}
-                            </div>
+                          <TableCell className="font-mono text-xs text-[#7A6A65]">
+                            {row.casNumber}
                           </TableCell>
-                          <TableCell className="space-y-1">
-                            <Badge variant={row.usFda.status === 'PASS' ? 'pass' : 'violation'}>
-                              [{row.usFda.status}]
-                            </Badge>
-                            <p className="text-[11px] text-slate-300 line-clamp-2">
-                              {row.usFda.justification}
-                            </p>
+                          <TableCell className="font-mono text-xs text-[#281E1C]">
+                            {row.concentrationPercent}
                           </TableCell>
-                          <TableCell className="space-y-1">
-                            <Badge
-                              variant={row.california.status === 'PASS' ? 'pass' : 'violation'}
-                            >
-                              [{row.california.status}]
-                            </Badge>
-                            <p className="text-[11px] text-slate-300 line-clamp-2">
-                              {row.california.justification}
-                            </p>
-                          </TableCell>
-                          <TableCell className="space-y-1">
-                            <Badge variant={row.eu.status === 'PASS' ? 'pass' : 'violation'}>
-                              [{row.eu.status}]
-                            </Badge>
-                            <p className="text-[11px] text-slate-300 line-clamp-2">
-                              {row.eu.justification}
-                            </p>
-                          </TableCell>
+                          {(['usFda', 'california', 'eu'] as const).map(
+                            (jurKey) => {
+                              const j = row[jurKey];
+                              return (
+                                <TableCell key={jurKey}>
+                                  <div className="flex items-center gap-1.5">
+                                    {j.status === 'PASS' ? (
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-[#2D6A4F]" />
+                                    ) : (
+                                      <XCircle className="w-3.5 h-3.5 text-[#B93848]" />
+                                    )}
+                                    <span className="text-xs font-medium text-[#281E1C]">
+                                      {j.status}
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] text-[#7A6A65] mt-0.5">
+                                    {j.citation}
+                                  </div>
+                                </TableCell>
+                              );
+                            }
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* CURATED BEAUTY CASE STUDIES (SEPHORA / PRESTIGE PRODUCT SHOWCASE) */}
-      <section id="collections" className="px-6 py-16 border-b border-slate-800/80">
-        <div className="max-w-[1280px] mx-auto space-y-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div className="space-y-1.5">
-              <div className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
-                CURATED FORMULATION &amp; PACKAGING CASE STUDIES
-              </div>
-              <h2
-                className="text-2xl sm:text-3xl font-semibold text-slate-50"
-                style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-              >
-                Select a Product Archetype to Inspect in the 3D Compliance Studio
-              </h2>
-            </div>
-            <p className="text-xs text-slate-400 max-w-md">
-              Each product pairs an interactive Three.js 3D packaging vessel with parts-per-million
-              toxicology across the US, California, and the European Union.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Card 1: Huda Matrix Pressed Pigment Compact */}
-            <Card className="border-slate-800 bg-slate-900/90 overflow-hidden flex flex-col justify-between group hover:border-rose-500/50 transition-all">
-              <div>
-                <div className="relative h-52 w-full overflow-hidden bg-slate-950">
-                  <Image
-                    src="/images/product_compact_palette.jpg"
-                    alt="Pressed pigment eyeshadow compact palette"
-                    fill
-                    referrerPolicy="no-referrer"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 left-3">
-                    <Badge variant="violation">[US FDA EYE VIOLATION · EU PASS]</Badge>
-                  </div>
-                </div>
-                <CardHeader className="pb-2">
-                  <div className="text-[11px] uppercase tracking-wider text-slate-400">
-                    Pressed Pigment Compact · Case Study 01
-                  </div>
-                  <CardTitle
-                    className="text-xl text-slate-50"
-                    style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-                  >
-                    The Huda Matrix — Neon Pressed Palette
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs text-slate-300 leading-relaxed space-y-2">
-                  <p>
-                    Contains 1.85% D&amp;C Red No. 28 Aluminum Lake—permitted in the EU, but banned
-                    in the US eye area under 21 CFR § 74.2328, with a 3.5pt warning buried beneath a
-                    peel-off sticker.
-                  </p>
                 </CardContent>
-              </div>
-              <div className="p-6 pt-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-between"
-                  onClick={() => launchStudioWithPreset('huda-matrix')}
-                >
-                  <span>Inspect Compact &amp; Peel Layer</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </Card>
+              </Card>
 
-            {/* Card 2: California PFAS Primer Trap */}
-            <Card className="border-slate-800 bg-slate-900/90 overflow-hidden flex flex-col justify-between group hover:border-rose-500/50 transition-all">
-              <div>
-                <div className="relative h-52 w-full overflow-hidden bg-slate-950">
-                  <Image
-                    src="/images/opencompact_luxury_hero.jpg"
-                    alt="Clean beauty complexion primer"
-                    fill
-                    referrerPolicy="no-referrer"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+              {/* Follow-up Notebook Prompt Bar (Spin off a new Notebook variation) */}
+              <div className="p-4 rounded-2xl bg-white border border-[#EADCD7] shadow-sm flex flex-col sm:flex-row items-center gap-3">
+                <div className="flex items-center gap-2.5 flex-1 w-full">
+                  <Sparkles className="w-4 h-4 text-[#B85D6F] shrink-0" />
+                  <input
+                    type="text"
+                    value={followUpInput}
+                    onChange={(e) => setFollowUpInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && followUpInput.trim()) {
+                        handleCreateRemixNotebook(
+                          followUpInput,
+                          'generate-distinct-brand'
+                        );
+                      }
+                    }}
+                    placeholder="Paste another product URL or prompt to spin off a new 3D Brand Notebook..."
+                    className="w-full bg-transparent text-sm text-[#281E1C] placeholder:text-[#A69590] focus:outline-none"
                   />
-                  <div className="absolute top-3 left-3">
-                    <Badge variant="violation">[CA AB 2762 PFAS BAN]</Badge>
-                  </div>
                 </div>
-                <CardHeader className="pb-2">
-                  <div className="text-[11px] uppercase tracking-wider text-slate-400">
-                    Complexion Primer · Case Study 02
-                  </div>
-                  <CardTitle
-                    className="text-xl text-slate-50"
-                    style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-                  >
-                    The California PFAS Trap — Velvet Primer
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs text-slate-300 leading-relaxed space-y-2">
-                  <p>
-                    Marketed as &quot;Clean Beauty&quot; while containing 0.10% PTFE (Teflon) and
-                    4.5% Cyclopentasiloxane (D5)—triggering California Toxic-Free Cosmetics Act and
-                    EU 0.1% D5 bans.
-                  </p>
-                </CardContent>
-              </div>
-              <div className="p-6 pt-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-between"
-                  onClick={() => launchStudioWithPreset('ca-pfas-trap')}
-                >
-                  <span>Inspect Primer &amp; CA Bans</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </Card>
-
-            {/* Card 3: Silvering Luxe Toning Elixir */}
-            <Card className="border-slate-800 bg-slate-900/90 overflow-hidden flex flex-col justify-between group hover:border-emerald-500/50 transition-all">
-              <div>
-                <div className="relative h-52 w-full overflow-hidden bg-slate-950">
-                  <Image
-                    src="/images/product_silvering_serum.jpg"
-                    alt="Silvering frosted glass hair toning serum bottle"
-                    fill
-                    referrerPolicy="no-referrer"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 left-3">
-                    <Badge variant="pass">[GLOBAL RETAIL CLEARANCE]</Badge>
-                  </div>
-                </div>
-                <CardHeader className="pb-2">
-                  <div className="text-[11px] uppercase tracking-wider text-emerald-400">
-                    Botanical Hair &amp; Scalp Elixir · Case Study 03
-                  </div>
-                  <CardTitle
-                    className="text-xl text-slate-50"
-                    style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-                  >
-                    Silvering Luxe — Toning &amp; Lustre Elixir
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs text-slate-300 leading-relaxed space-y-2">
-                  <p>
-                    Inspired by Alexis Eizinas of Silvering: purposeful silver-hair formulation with
-                    0.12% Acid Violet 43, zero PFAS, 7.5pt direct-printed typography, and positive
-                    cosmetic claims.
-                  </p>
-                </CardContent>
-              </div>
-              <div className="p-6 pt-2">
                 <Button
                   variant="default"
-                  className="w-full justify-between"
-                  onClick={() => launchStudioWithPreset('silvering-toner')}
-                >
-                  <span>Inspect Clean Gold-Standard</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* LIVE INTERACTIVE FORMULATION SANDBOX WIDGET */}
-      <section id="sandbox" className="px-6 py-16 border-b border-slate-800/80 bg-slate-900/25">
-        <div className="max-w-[1280px] mx-auto space-y-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div className="space-y-1">
-              <div className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
-                INSTANT FORMULATION SANDBOX
-              </div>
-              <h2
-                className="text-2xl sm:text-3xl font-semibold text-slate-50"
-                style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-              >
-                Test Raw INCI Ingredient Strings Against Global Retail Thresholds
-              </h2>
-            </div>
-
-            {/* Sample Formulation Selector Buttons */}
-            <div className="flex flex-wrap items-center gap-2">
-              {Object.entries(SANDBOX_RAW_SAMPLES).map(([key, sample]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => {
-                    setSandboxKey(key);
-                    setSandboxInput(sample.rawChemicalString);
-                    handleRunInstantMockAudit();
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                    sandboxKey === key
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50'
-                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
-                  }`}
-                >
-                  {sample.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/95 shadow-2xl overflow-hidden p-6 space-y-5">
-            <div className="flex flex-col md:flex-row gap-3 items-stretch">
-              <textarea
-                rows={3}
-                value={sandboxInput}
-                onChange={(e) => setSandboxInput(e.target.value)}
-                aria-label="Raw chemical formulation string for instant audit"
-                className="flex-1 rounded-xl border border-slate-800 bg-slate-950 p-3.5 text-xs font-mono text-slate-200 leading-relaxed focus:outline-none focus:border-emerald-500"
-              />
-              <div className="flex flex-col justify-between gap-2 shrink-0 md:w-60">
-                <Button
-                  onClick={handleRunInstantMockAudit}
-                  disabled={isRunningMockAudit}
-                  className="w-full h-full min-h-[48px]"
-                >
-                  <Play className="h-4 w-4" />
-                  <span>
-                    {isRunningMockAudit ? 'Auditing Formula...' : 'Run Instant Mock Audit'}
-                  </span>
-                </Button>
-                <Button
-                  variant="secondary"
                   size="sm"
-                  onClick={() => launchStudioWithPreset(sandboxKey)}
-                  className="w-full"
+                  onClick={() =>
+                    handleCreateRemixNotebook(
+                      followUpInput,
+                      'generate-distinct-brand'
+                    )
+                  }
+                  disabled={isSynthesizing || !followUpInput.trim()}
+                  className="rounded-full shrink-0"
                 >
-                  <span>Open 3D Twin in Studio</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  <Plus className="w-3.5 h-3.5" />
+                  Create New Notebook
                 </Button>
               </div>
             </div>
+          )}
 
-            {isRunningMockAudit ? (
-              <div className="rounded-xl border border-emerald-500/40 bg-slate-950 p-6 space-y-3 font-mono text-xs">
-                <div className="text-emerald-400 font-semibold">{mockAuditStage}</div>
-                <div className="h-3 w-3/4 rounded bg-slate-800 animate-pulse" />
-                <div className="h-3 w-1/2 rounded bg-slate-800 animate-pulse" />
-              </div>
-            ) : (
-              hasRunMockAudit && (
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          activeSandboxResult.overallStatus === 'PASS' ? 'pass' : 'violation'
-                        }
-                      >
-                        [{activeSandboxResult.overallStatus}]
-                      </Badge>
-                      <span className="font-semibold text-slate-100">
-                        {activeSandboxResult.productName}
-                      </span>
+          {/* =====================================================================
+              VIEW 3: ACCESSIBLE EDITORIAL SHOWCASE & HOMEPAGE
+             ===================================================================== */}
+          {viewMode === 'showcase' && (
+            <div className="space-y-20 pb-24">
+              {/* Sunlit Parisian Vanity Hero Section */}
+              <section className="relative overflow-hidden border-b border-[#EADCD7] bg-gradient-to-b from-[#FBF2F3]/70 via-[#FAF6F3] to-[#FAF6F3] pt-12 pb-20 px-4 sm:px-8">
+                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                  <div className="lg:col-span-6 space-y-6">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white border border-[#E5C1C8] text-[#9E4758] text-[11px] tracking-[0.18em] uppercase">
+                      <Sparkles className="w-3 h-3" />
+                      <span>La Maison OpenCompact • Clean Beauty Intelligence</span>
                     </div>
-                    <span className="font-mono text-slate-400 text-[11px]">
-                      Evaluated across US FDA, California &amp; EU
+
+                    <h1 className="font-serif text-4xl sm:text-6xl text-[#281E1C] font-normal tracking-tight leading-[1.06]">
+                      Where Haute Couture{' '}
+                      <span className="italic text-[#B85D6F]">Formulation</span>{' '}
+                      Meets Global Retail Clearance.
+                    </h1>
+
+                    <p className="text-base text-[#6E5D58] leading-relaxed font-light max-w-xl">
+                      Inspired by Alexis Eizinas of Silvering. OpenCompact unites sunlit 3D packaging art direction with deterministic toxicology across US FDA MoCRA, California AB 2762, and EU Regulation (EC) 1223/2009.
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-3 pt-2">
+                      <Button
+                        variant="default"
+                        size="lg"
+                        onClick={() => setViewMode('new-prompt')}
+                        className="rounded-full"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        Launch Minimalist Remix Notebook
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={() => setViewMode('notebook')}
+                        className="rounded-full"
+                      >
+                        <Box className="w-4 h-4 text-[#B85D6F]" />
+                        View Active 3D Product Twin
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Sunlit Parisian Vanity Photography Card */}
+                  <div className="lg:col-span-6">
+                    <div className="relative rounded-3xl overflow-hidden border border-[#EADCD7] shadow-[0_24px_60px_-20px_rgba(120,75,65,0.18)] bg-white p-3">
+                      <div className="relative h-[420px] w-full rounded-2xl overflow-hidden">
+                        <Image
+                          src="/images/feminine_vanity_hero.jpg"
+                          alt="OpenCompact Parisian Vanity & Refillable Rose-Gold Compact"
+                          fill
+                          className="object-cover"
+                          referrerPolicy="no-referrer"
+                          priority
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#281E1C]/50 via-transparent to-transparent" />
+                        <div className="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-[#EADCD7] flex items-center justify-between">
+                          <div>
+                            <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#B85D6F]">
+                              Verified Retail Readiness
+                            </div>
+                            <div className="font-serif text-lg text-[#281E1C]">
+                              Sephora Clean • Credo • EU Annex II/III
+                            </div>
+                          </div>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => setViewMode('notebook')}
+                            className="rounded-full text-xs"
+                          >
+                            Interact in 3D
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Interactive Regulatory Concentration Sandbox */}
+              <section className="max-w-7xl mx-auto px-4 sm:px-8">
+                <div className="rounded-3xl bg-white border border-[#EADCD7] p-6 sm:p-10 shadow-xs">
+                  <div className="max-w-2xl mb-8">
+                    <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-[#B85D6F]">
+                      Interactive Formulation Sandbox
                     </span>
+                    <h2 className="font-serif text-3xl sm:text-4xl text-[#281E1C] mt-1">
+                      Test Live Active Thresholds Across Three Jurisdictions
+                    </h2>
+                    <p className="text-sm text-[#7A6A65] mt-2">
+                      Drag the active Retinol concentration slider or toggle PFAS substitution to see how a formula passes in the US while triggering restrictions in Europe.
+                    </p>
                   </div>
 
-                  <div className="rounded-xl border border-slate-800 bg-slate-950 overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Evaluated Ingredient</TableHead>
-                          <TableHead className="text-right">Concentration</TableHead>
-                          <TableHead>US FDA (MoCRA)</TableHead>
-                          <TableHead>California (Toxic-Free)</TableHead>
-                          <TableHead>European Union (EC 1223/2009)</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {activeSandboxResult.matrixRows.map((row) => (
-                          <TableRow key={row.id}>
-                            <TableCell>
-                              <div className="font-semibold text-slate-100">
-                                {row.ingredientName}
-                              </div>
-                              <div className="text-[11px] font-mono text-slate-400">
-                                {row.inciName} · CAS {row.casNumber}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right font-mono tabular-nums">
-                              <div className="font-semibold text-slate-100">
-                                {row.concentrationPpm.toLocaleString()} ppm
-                              </div>
-                              <div className="text-[11px] text-slate-400">
-                                {row.concentrationPercent}
-                              </div>
-                            </TableCell>
-                            <TableCell className="space-y-1">
-                              <Badge variant={row.usFda.status === 'PASS' ? 'pass' : 'violation'}>
-                                [{row.usFda.status}]
-                              </Badge>
-                              <p className="text-[11px] text-slate-300 line-clamp-2">
-                                {row.usFda.justification}
-                              </p>
-                            </TableCell>
-                            <TableCell className="space-y-1">
-                              <Badge
-                                variant={row.california.status === 'PASS' ? 'pass' : 'violation'}
-                              >
-                                [{row.california.status}]
-                              </Badge>
-                              <p className="text-[11px] text-slate-300 line-clamp-2">
-                                {row.california.justification}
-                              </p>
-                            </TableCell>
-                            <TableCell className="space-y-1">
-                              <Badge variant={row.eu.status === 'PASS' ? 'pass' : 'violation'}>
-                                [{row.eu.status}]
-                              </Badge>
-                              <p className="text-[11px] text-slate-300 line-clamp-2">
-                                {row.eu.justification}
-                              </p>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <div className="lg:col-span-5 space-y-6 p-6 rounded-2xl bg-[#FAF6F3] border border-[#EADCD7]">
+                      <div>
+                        <div className="flex items-center justify-between text-xs font-medium text-[#281E1C] mb-2">
+                          <span>Active Retinol Concentration (Leave-On)</span>
+                          <span className="font-mono text-sm text-[#B85D6F]">
+                            {sandboxConcentration.toFixed(2)}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0.01}
+                          max={0.2}
+                          step={0.01}
+                          value={sandboxConcentration}
+                          onChange={(e) =>
+                            setSandboxConcentration(parseFloat(e.target.value))
+                          }
+                          className="w-full accent-[#B85D6F] cursor-pointer"
+                        />
+                        <div className="flex justify-between text-[10px] font-mono text-[#8C7A75] mt-1">
+                          <span>0.01%</span>
+                          <span>EU Cap: 0.05%</span>
+                          <span>US Cap: 0.10%</span>
+                          <span>0.20%</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-[#EADCD7] flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-medium text-[#281E1C]">
+                            Substitute PTFE (PFAS) with Boron Nitride Silk
+                          </div>
+                          <div className="text-[11px] text-[#7A6A65]">
+                            Required for California AB 2762 &amp; EU REACH
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSandboxPfasFree((v) => !v)}
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                            sandboxPfasFree
+                              ? 'bg-[#2D6A4F] text-white'
+                              : 'bg-[#FBF2F3] text-[#B93848] border border-[#E5C1C8]'
+                          }`}
+                        >
+                          {sandboxPfasFree
+                            ? 'PFAS-Free (Boron Silk)'
+                            : 'Contains PTFE'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {[
+                        {
+                          market: 'US FDA MoCRA',
+                          pass: sandboxUsPass,
+                          note: sandboxUsPass
+                            ? 'Cleared for US retail distribution'
+                            : 'Exceeds 0.10% CIR safety threshold',
+                        },
+                        {
+                          market: 'California AB 2762',
+                          pass: sandboxCaPass,
+                          note: sandboxCaPass
+                            ? 'PFAS-free & cleared for CA retail'
+                            : 'Blocked by intentionally added PFAS / cap',
+                        },
+                        {
+                          market: 'EU (EC) 1223/2009',
+                          pass: sandboxEuPass,
+                          note: sandboxEuPass
+                            ? 'Complies with EU Annex III 0.05% cap'
+                            : 'Exceeds EU 0.05% Retinol leave-on limit',
+                        },
+                      ].map((m) => (
+                        <div
+                          key={m.market}
+                          className={`p-5 rounded-2xl border ${
+                            m.pass
+                              ? 'bg-[#F4FBF7] border-[#B7E4C7]'
+                              : 'bg-[#FDF2F3] border-[#F2C6CC]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-semibold text-[#281E1C]">
+                              {m.market}
+                            </span>
+                            {m.pass ? (
+                              <CheckCircle2 className="w-4 h-4 text-[#2D6A4F]" />
+                            ) : (
+                              <XCircle className="w-4 h-4 text-[#B93848]" />
+                            )}
+                          </div>
+                          <div
+                            className={`font-serif text-xl font-medium ${
+                              m.pass ? 'text-[#2D6A4F]' : 'text-[#B93848]'
+                            }`}
+                          >
+                            {m.pass ? 'Cleared' : 'Restricted'}
+                          </div>
+                          <p className="text-xs text-[#6E5D58] mt-1">{m.note}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              )
-            )}
-          </div>
-        </div>
-      </section>
+              </section>
 
-      {/* ARCHITECTURAL SPEC BENTO GRID (3 GEMINI 4 ARGON CAPABILITY CARDS) */}
-      <section id="architecture" className="px-6 py-20 border-b border-slate-800/80">
-        <div className="max-w-[1280px] mx-auto space-y-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div className="space-y-2 max-w-2xl">
-              <div className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
-                ARCHITECTURAL SPECIFICATION · GEMINI 4 ARGON
-              </div>
-              <h2
-                className="text-2xl sm:text-3xl font-semibold text-slate-50 tracking-tight"
-                style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-              >
-                Unified Toxicology, 3D Packaging Vetting &amp; Autonomous 15-Day MoCRA Filings
-              </h2>
-            </div>
-            <Button variant="outline" onClick={() => launchStudioWithPreset('huda-matrix')}>
-              <span>Explore All 3 Modules in Studio</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Bento Card 1: 1M Unified Context Window */}
-            <Card className="lg:col-span-2 flex flex-col justify-between border-slate-800 bg-slate-900/90 p-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono text-emerald-400 font-semibold">
-                    01. 1M Unified Context Window
+              {/* Silvering 5 Pillars Editorial Section */}
+              <section className="max-w-7xl mx-auto px-4 sm:px-8">
+                <div className="mb-8">
+                  <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-[#B85D6F]">
+                    Modern Beauty Founder Ethos • Authority Magazine
                   </span>
-                  <Globe className="h-4 w-4 text-emerald-400" />
+                  <h2 className="font-serif text-3xl sm:text-4xl text-[#281E1C] mt-1">
+                    Five Pillars Inspired by Alexis Eizinas of Silvering
+                  </h2>
                 </div>
-                <h3
-                  className="text-xl font-semibold text-slate-50"
-                  style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-                >
-                  Cross-Border Legislative Multi-File Indexing
-                </h3>
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  Cosmetic launches stall when an ingredient permitted in Europe is restricted in
-                  the US eye area or banned in California. Gemini 4 Argon holds{' '}
-                  <strong>US FDA 21 CFR Parts 73/74/700</strong>,{' '}
-                  <strong>MoCRA Section 605/608</strong>,{' '}
-                  <strong>California Toxic-Free Cosmetics Act (AB 2762 &amp; AB 496)</strong>, and{' '}
-                  <strong>EU Regulation (EC) No 1223/2009 Annexes II–VI</strong> in unified context
-                  to catch parts-per-million conflicts before production.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 mt-6 border-t border-slate-800 font-mono text-xs">
-                <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                  <div className="text-slate-400 text-[11px]">US FDA 21 CFR § 74.2328</div>
-                  <div className="text-rose-400 font-semibold mt-1">Red 28 Eye Ban (0 ppm)</div>
-                </div>
-                <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                  <div className="text-slate-400 text-[11px]">California AB 2762 / 496</div>
-                  <div className="text-rose-400 font-semibold mt-1">
-                    Intentional PFAS / PTFE Ban
-                  </div>
-                </div>
-                <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                  <div className="text-slate-400 text-[11px]">EU Reg 1223/2009 Annex IV</div>
-                  <div className="text-emerald-400 font-semibold mt-1">
-                    1,600+ Indexed Substances
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Bento Card 2: Native Multimodal Vision */}
-            <Card className="flex flex-col justify-between border-slate-800 bg-slate-900/90 p-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono text-emerald-400 font-semibold">
-                    02. Native Multimodal Vision
-                  </span>
-                  <Layers className="h-4 w-4 text-emerald-400" />
-                </div>
-                <h3
-                  className="text-xl font-semibold text-slate-50"
-                  style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-                >
-                  Automated Packaging Artwork Layer &amp; 3D Vessel Vetting
-                </h3>
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  Ingests print-ready dielines, product URLs, or packaging videos to render an
-                  interactive <strong>Three.js 3D Packaging Twin</strong>. Flags buried peel-off
-                  safety warnings, sub-6pt micro-typography, and FDA structure/function drug-claim
-                  crossovers under <strong>21 CFR § 701.2</strong>.
-                </p>
-              </div>
-
-              <div className="pt-6 mt-6 border-t border-slate-800">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => launchStudioWithPreset('huda-matrix')}
-                >
-                  <span>Open 3D Peel-Off Layer Inspector</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </Card>
-
-            {/* Bento Card 3: Long Decode Horizon */}
-            <Card className="lg:col-span-3 border-slate-800 bg-slate-900/90 p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                <div className="lg:col-span-7 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-semibold">
-                    <FileCode2 className="h-4 w-4" />
-                    <span>03. Long Decode Horizon</span>
-                  </div>
-                  <h3
-                    className="text-xl font-semibold text-slate-50"
-                    style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-                  >
-                    Autonomous Multi-Page 15-Day MoCRA Adverse Event Dossier Generation
-                  </h3>
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    Under <strong>21 U.S.C. § 364a (MoCRA Section 605)</strong>, Responsible Persons
-                    have <strong>15 business days</strong> to file a Serious Adverse Event packet
-                    when a consumer requires emergency medical care. Gemini 4 Argon’s long decode
-                    horizon compiles unstructured customer care tickets and QC batch logs into a
-                    complete legal submission—including Patient Anonymized Profiles, Chronological
-                    Stability Mapping, Toxicological Hazard Assessments, and Clinical Follow-Up
-                    Templates.
-                  </p>
-                </div>
-
-                <div className="lg:col-span-5 rounded-xl border border-slate-800 bg-slate-950 p-4 font-mono text-xs space-y-2">
-                  <div className="flex items-center justify-between text-rose-400 border-b border-slate-800 pb-2">
-                    <span>PACKET: FDA-MOCRA-SAE-2026-884B</span>
-                    <span>15-DAY STATUTORY DEADLINE</span>
-                  </div>
-                  <div className="text-slate-300">
-                    • Section 1: Patient Anonymized Profiles (Mount Sinai ER Case)
-                  </div>
-                  <div className="text-slate-300">
-                    • Section 2: Chronological Batch pH 11.4 &amp; PPD Stability Map
-                  </div>
-                  <div className="text-slate-300">
-                    • Section 3: Synergistic Toxicological Hazard &amp; MoS = 0.04
-                  </div>
-                  <div className="pt-2">
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      onClick={() => launchStudioWithPreset('mocra-adverse-event')}
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {SILVERING_FIVE_PILLARS.map((pillar) => (
+                    <div
+                      key={pillar.number}
+                      className="p-5 rounded-2xl bg-white border border-[#EADCD7] flex flex-col justify-between"
                     >
-                      <span>Launch 15-Day MoCRA Dossier Generator</span>
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+                      <div>
+                        <span className="font-serif text-2xl italic text-[#B85D6F]">
+                          {pillar.number}
+                        </span>
+                        <h3 className="font-serif text-lg font-medium text-[#281E1C] mt-2">
+                          {pillar.title}
+                        </h3>
+                        <p className="text-xs text-[#7A6A65] mt-2 leading-relaxed">
+                          {pillar.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* MODERN BEAUTY FOUNDER ETHOS SECTION (INSPIRED BY ALEXIS EIZINAS OF SILVERING) */}
-      <section
-        id="founder-ethos"
-        className="px-6 py-20 border-b border-slate-800/80 bg-slate-900/30"
-      >
-        <div className="max-w-[1280px] mx-auto space-y-10">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-            <div className="space-y-2 max-w-3xl">
-              <div className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
-                MODERN BEAUTY INDUSTRY ETHOS · INSPIRED BY ALEXIS EIZINAS OF SILVERING
-              </div>
-              <h2
-                className="text-2xl sm:text-3xl font-semibold text-slate-50 tracking-tight"
-                style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-              >
-                Five Pillars of Purposeful Formulation, Positive Communication &amp; Brand Integrity
-              </h2>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Inspired by beauty veteran and industrial designer{' '}
-                <strong>Alexis Eizinas (Founder of Silvering)</strong> in{' '}
-                <em>
-                  Authority Magazine’s &quot;Five Things You Need To Know To Succeed In The Modern
-                  Beauty Industry&quot;
-                </em>
-                —OpenCompact pairs statutory toxicology with authentic brand storytelling.
-              </p>
+              </section>
             </div>
+          )}
 
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <Button variant="default" onClick={() => launchStudioWithPreset('silvering-toner')}>
-                <ShieldCheck className="h-4 w-4" />
-                <span>Inspect Silvering Luxe Toning Elixir</span>
-              </Button>
+          {/* =====================================================================
+              VIEW 4: FULL REGULATORY LAB STUDIO
+             ===================================================================== */}
+          {viewMode === 'studio' && (
+            <div className="py-6">
+              <ComplianceStudioWorkspace />
             </div>
-          </div>
+          )}
+        </main>
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {SILVERING_FIVE_PILLARS.map((pillar) => (
-              <Card
-                key={pillar.number}
-                className="border-slate-800 bg-slate-900/90 p-5 flex flex-col justify-between"
-              >
-                <div className="space-y-2.5">
-                  <div className="text-xs font-mono text-emerald-400 font-semibold">
-                    {pillar.number}. Pillar
-                  </div>
-                  <h3
-                    className="text-base font-semibold text-slate-50 leading-snug"
-                    style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-                  >
-                    {pillar.title}
-                  </h3>
-                  <div className="text-xs font-medium text-emerald-300/90">{pillar.subtitle}</div>
-                  <p className="text-xs text-slate-400 leading-relaxed">{pillar.description}</p>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* GITHUB README.MD & OPEN-SOURCE REPOSITORY EXPLORER */}
-      <section id="readme" className="px-6 py-20 border-b border-slate-800/80">
-        <div className="max-w-[1280px] mx-auto space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
-                OPEN-SOURCE REPOSITORY DOCUMENTATION
-              </div>
-              <h2
-                className="text-2xl font-semibold text-slate-50 tracking-tight"
-                style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-              >
-                README.md — OpenCompact Architecture &amp; Developer Guide
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(OPENCOMPACT_README_MD);
-                  setCopiedReadme(true);
-                  setTimeout(() => setCopiedReadme(false), 2000);
-                }}
-              >
+      {/* GitHub README Modal */}
+      <Dialog open={readmeModalOpen} onOpenChange={setReadmeModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto bg-white border-[#EADCD7] text-[#281E1C]">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="font-serif text-2xl text-[#281E1C]">
+                OpenCompact — Repository Documentation
+              </DialogTitle>
+              <Button variant="outline" size="sm" onClick={handleCopyReadme}>
                 {copiedReadme ? (
                   <>
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
-                    <span>Copied README.md</span>
+                    <Check className="w-3.5 h-3.5 text-[#2D6A4F]" />
+                    Copied Markdown
                   </>
                 ) : (
                   <>
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>Copy README.md</span>
+                    <Copy className="w-3.5 h-3.5" />
+                    Copy README.md
                   </>
                 )}
               </Button>
-              <Button size="sm" onClick={() => launchStudioWithPreset('huda-matrix')}>
-                <span>Open Compliance Studio</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
             </div>
-          </div>
-
-          <Card className="border-slate-800 bg-slate-900/90 overflow-hidden">
-            <div className="px-5 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
-              <span className="flex items-center gap-2">
-                <BookOpen className="h-3.5 w-3.5 text-emerald-400" />
-                <span>opencompact / README.md</span>
-              </span>
-              <span>MIT License · Next.js App Router · Gemini 4 Argon</span>
-            </div>
-            <div className="p-6 font-mono text-xs leading-relaxed text-slate-200 overflow-x-auto prose prose-invert max-w-none">
-              <div className="markdown-body space-y-4">
-                <Markdown>{OPENCOMPACT_README_MD}</Markdown>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      {/* QUIET LUXURY FOOTER */}
-      <footer className="px-6 py-8 bg-slate-950 text-xs text-slate-400">
-        <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="h-5 w-5 rounded-full border border-emerald-400/80 bg-emerald-950 flex items-center justify-center">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            </span>
-            <span
-              className="font-semibold tracking-wider text-slate-100"
-              style={{ fontFamily: 'var(--font-serif), Georgia, serif' }}
-            >
-              OPENCOMPACT
-            </span>
-            <span aria-hidden="true">·</span>
-            <span>Prestige Cosmetic Compliance Atelier &amp; 3D Brand Twin Simulator</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <button
-              type="button"
-              onClick={() => launchStudioWithPreset('huda-matrix')}
-              className="hover:text-slate-100 transition-colors cursor-pointer"
-            >
-              Launch Studio
-            </button>
-            <button
-              type="button"
-              onClick={() => setReadmeModalOpen(true)}
-              className="hover:text-slate-100 transition-colors cursor-pointer"
-            >
-              README.md
-            </button>
-          </div>
-        </div>
-      </footer>
-
-      {/* README Modal Dialog */}
-      <Dialog open={readmeModalOpen} onOpenChange={setReadmeModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>OpenCompact — GitHub README.md</DialogTitle>
-            <DialogDescription>
-              Open-source repository documentation, Gemini 4 Argon architecture, and CLI quickstart.
+            <DialogDescription className="text-xs text-[#7A6A65]">
+              Open-source 3D cosmetic packaging twin &amp; multi-jurisdictional formulation studio.
             </DialogDescription>
           </DialogHeader>
-          <div className="prose prose-invert max-w-none text-xs leading-relaxed font-mono bg-slate-950 p-5 rounded-xl border border-slate-800 overflow-x-auto">
-            <div className="markdown-body space-y-3">
+          <div className="mt-4 p-6 rounded-2xl bg-[#FAF6F3] border border-[#EADCD7] prose prose-sm max-w-none text-[#281E1C]">
+            <div className="markdown-body">
               <Markdown>{OPENCOMPACT_README_MD}</Markdown>
             </div>
           </div>

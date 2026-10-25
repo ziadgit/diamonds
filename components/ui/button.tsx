@@ -4,25 +4,25 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap shrink-0 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap shrink-0 rounded-full text-xs font-medium tracking-wider uppercase transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C97384] disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
   {
     variants: {
       variant: {
         default:
-          'bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.25)]',
+          'bg-gradient-to-r from-[#C86D7E] via-[#B85D6F] to-[#A64E60] text-white font-semibold hover:brightness-105 shadow-[0_6px_20px_rgba(184,93,111,0.24)]',
         destructive:
-          'bg-rose-600 text-white hover:bg-rose-500',
+          'bg-[#BE123C] text-white hover:bg-[#9F1239]',
         outline:
-          'border border-slate-700 bg-slate-900/90 text-slate-100 hover:bg-slate-800 hover:border-slate-600',
+          'border border-[#E4D3CD] bg-white text-[#281E1C] hover:bg-[#FBF2F3] hover:border-[#C86D7E]',
         secondary:
-          'bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700',
+          'bg-[#F5EBE8] text-[#281E1C] hover:bg-[#EDE0DC] border border-[#E4D3CD]',
         ghost:
-          'text-slate-300 hover:bg-slate-800/70 hover:text-slate-100',
+          'text-[#6E5A56] hover:bg-[#F5EBE8] hover:text-[#281E1C]',
       },
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-11 rounded-lg px-6 text-sm',
+        default: 'h-10 px-5 py-2',
+        sm: 'h-8 px-4 text-[11px]',
+        lg: 'h-12 px-7 text-xs',
         icon: 'h-9 w-9',
       },
     },
